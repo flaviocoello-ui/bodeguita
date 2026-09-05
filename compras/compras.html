@@ -12,18 +12,18 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
       rel="stylesheet"
     />
-        <link href="../assets/fonts.css" rel="stylesheet" />
-<link href="../assets/themes.css" rel="stylesheet" />
+    <link href="../assets/fonts.css" rel="stylesheet" />
+    <link href="../assets/themes.css" rel="stylesheet" />
     <link href="../assets/global.css" rel="stylesheet" />
-  <script>
-    (function () {
-      try {
-        if (localStorage.getItem('mm-theme') === 'oscuro') {
-          document.documentElement.setAttribute('data-theme', 'oscuro');
-        }
-      } catch (e) {}
-    })();
-  </script>
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem("mm-theme") === "oscuro") {
+            document.documentElement.setAttribute("data-theme", "oscuro");
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div class="d-flex">
@@ -57,13 +57,20 @@
             </a>
           </li>
           <li class="nav-item">
-            <a href="../mantenimiento/mantenimiento.html" class="nav-link text-white">
+            <a
+              href="../mantenimiento/mantenimiento.html"
+              class="nav-link text-white"
+            >
               <i class="bi bi-gear me-2"></i>
               Mantenimiento
             </a>
           </li>
           <li class="nav-item">
-            <a href="../compras/compras.html" class="nav-link active" aria-current="page">
+            <a
+              href="../compras/compras.html"
+              class="nav-link active"
+              aria-current="page"
+            >
               <i class="bi bi-truck me-2"></i>
               Compras
             </a>
@@ -114,7 +121,11 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-dark">
             <li>
-              <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalConfiguracion"
+              <a
+                class="dropdown-item"
+                href="#"
+                data-bs-toggle="modal"
+                data-bs-target="#modalConfiguracion"
                 ><i class="bi bi-gear me-2"></i>Configuración</a
               >
             </li>
@@ -132,7 +143,6 @@
       <div class="flex-grow-1 p-4">
         <div class="d-flex align-items-center mb-4">
           <h4 class="mb-0">Compras</h4>
-          
         </div>
 
         <!-- Pestañas de secciones -->
@@ -363,14 +373,20 @@
             <h6 class="border-bottom pb-2 mb-3">Datos de la compra</h6>
             <div class="row g-3 mb-4">
               <div class="col-md-6">
-                <label for="proveedorCompra" class="form-label">Proveedor</label>
+                <label for="proveedorCompra" class="form-label"
+                  >Proveedor</label
+                >
                 <select class="form-select" id="proveedorCompra" required>
-                  <option value="" selected disabled>Seleccione un proveedor</option>
+                  <option value="" selected disabled>
+                    Seleccione un proveedor
+                  </option>
                   <option>Distribuidora Norte S.A.C.</option>
                 </select>
               </div>
               <div class="col-md-3">
-                <label for="almacenCompra" class="form-label">Almacén destino</label>
+                <label for="almacenCompra" class="form-label"
+                  >Almacén destino</label
+                >
                 <select class="form-select" id="almacenCompra" required>
                   <option value="" selected disabled>Seleccione</option>
                   <option>Tienda</option>
@@ -378,11 +394,20 @@
                 </select>
               </div>
               <div class="col-md-3">
-                <label for="fechaCompra" class="form-label">Fecha de compra</label>
-                <input class="form-control" id="fechaCompra" type="date" required />
+                <label for="fechaCompra" class="form-label"
+                  >Fecha de compra</label
+                >
+                <input
+                  class="form-control"
+                  id="fechaCompra"
+                  type="date"
+                  required
+                />
               </div>
               <div class="col-md-3">
-                <label for="tipoDocumentoCompra" class="form-label">Tipo de documento</label>
+                <label for="tipoDocumentoCompra" class="form-label"
+                  >Tipo de documento</label
+                >
                 <select class="form-select" id="tipoDocumentoCompra">
                   <option value="">Sin documento</option>
                   <option>Factura</option>
@@ -391,11 +416,20 @@
                 </select>
               </div>
               <div class="col-md-3">
-                <label for="numeroDocumentoCompra" class="form-label">N° de documento</label>
-                <input class="form-control" id="numeroDocumentoCompra" type="text" maxlength="50" />
+                <label for="numeroDocumentoCompra" class="form-label"
+                  >N° de documento</label
+                >
+                <input
+                  class="form-control"
+                  id="numeroDocumentoCompra"
+                  type="text"
+                  maxlength="50"
+                />
               </div>
               <div class="col-md-3">
-                <label for="metodoPagoCompra" class="form-label">Método de pago</label>
+                <label for="metodoPagoCompra" class="form-label"
+                  >Método de pago</label
+                >
                 <select class="form-select" id="metodoPagoCompra">
                   <option value="" selected disabled>Seleccione</option>
                   <option>Efectivo</option>
@@ -406,26 +440,50 @@
                 </select>
               </div>
               <div class="col-md-3">
-                <label for="montoPagadoCompra" class="form-label">Pago inicial</label>
+                <label for="montoPagadoCompra" class="form-label"
+                  >Pago inicial</label
+                >
                 <div class="input-group">
                   <span class="input-group-text">S/</span>
-                  <input class="form-control" id="montoPagadoCompra" type="number" min="0" step="0.01" value="0.00" />
+                  <input
+                    class="form-control"
+                    id="montoPagadoCompra"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value="0.00"
+                  />
                 </div>
               </div>
               <div class="col-md-3">
-                <label for="fechaVencimientoCompra" class="form-label">Vencimiento de pago</label>
-                <input class="form-control" id="fechaVencimientoCompra" type="date" disabled />
+                <label for="fechaVencimientoCompra" class="form-label"
+                  >Vencimiento de pago</label
+                >
+                <input
+                  class="form-control"
+                  id="fechaVencimientoCompra"
+                  type="date"
+                  disabled
+                />
                 <div class="form-text">Solo para compras al crédito.</div>
               </div>
               <div class="col-12">
                 <div class="form-check">
-                  <input class="form-check-input" id="compraCredito" type="checkbox" />
-                  <label class="form-check-label" for="compraCredito">Compra al crédito</label>
+                  <input
+                    class="form-check-input"
+                    id="compraCredito"
+                    type="checkbox"
+                  />
+                  <label class="form-check-label" for="compraCredito"
+                    >Compra al crédito</label
+                  >
                 </div>
               </div>
             </div>
 
-            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+            <div
+              class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3"
+            >
               <h6 class="mb-0">Productos recibidos</h6>
               <button class="btn btn-outline-primary btn-sm" type="button">
                 <i class="bi bi-plus-lg me-1"></i>Agregar producto
@@ -450,7 +508,11 @@
                 <tbody>
                   <tr>
                     <td>
-                      <select class="form-select" aria-label="Producto" required>
+                      <select
+                        class="form-select"
+                        aria-label="Producto"
+                        required
+                      >
                         <option value="" disabled>Buscar o seleccionar</option>
                         <option>Arroz Costeño</option>
                         <option>Aceite Primor 1L</option>
@@ -463,20 +525,88 @@
                       </select>
                     </td>
                     <td>
-                      <select class="form-select" aria-label="Presentación" required>
+                      <select
+                        class="form-select"
+                        aria-label="Presentación"
+                        required
+                      >
                         <option>Unidad (1 UND)</option>
                         <option selected>Caja x24 (24 UND)</option>
                       </select>
                     </td>
-                    <td><input class="form-control" id="cantidadCompra" aria-label="Cantidad de presentaciones" type="number" min="1" step="1" value="2" required /></td>
-                    <td><input class="form-control" aria-label="Equivalencia en unidad base" type="text" value="24 UND" readonly /></td>
-                    <td><input class="form-control" aria-label="Cantidad que ingresa al stock" type="text" value="48 UND" readonly /></td>
-                    <td><input class="form-control" id="costoCompra" aria-label="Costo por presentación" type="number" min="0" step="0.01" value="86.40" required /></td>
-                    <td><input class="form-control" type="text" maxlength="30" value="LEC-SEP-01" /></td>
-                    <td><input class="form-control" type="date" value="2027-03-01" /></td>
-                    <td><input class="form-control" id="subtotalLineaCompra" type="number" step="0.01" value="172.80" readonly /></td>
                     <td>
-                      <button class="btn btn-outline-danger btn-sm" type="button" aria-label="Quitar producto">
+                      <input
+                        class="form-control"
+                        id="cantidadCompra"
+                        aria-label="Cantidad de presentaciones"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value="2"
+                        required
+                      />
+                    </td>
+                    <td>
+                      <input
+                        class="form-control"
+                        aria-label="Equivalencia en unidad base"
+                        type="text"
+                        value="24 UND"
+                        readonly
+                      />
+                    </td>
+                    <td>
+                      <input
+                        class="form-control"
+                        aria-label="Cantidad que ingresa al stock"
+                        type="text"
+                        value="48 UND"
+                        readonly
+                      />
+                    </td>
+                    <td>
+                      <input
+                        class="form-control"
+                        id="costoCompra"
+                        aria-label="Costo por presentación"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value="86.40"
+                        required
+                      />
+                    </td>
+                    <td>
+                      <input
+                        class="form-control"
+                        type="text"
+                        maxlength="30"
+                        value="LEC-SEP-01"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        class="form-control"
+                        type="date"
+                        value="2027-03-01"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        class="form-control"
+                        id="subtotalLineaCompra"
+                        type="number"
+                        step="0.01"
+                        value="172.80"
+                        readonly
+                      />
+                    </td>
+                    <td>
+                      <button
+                        class="btn btn-outline-danger btn-sm"
+                        type="button"
+                        aria-label="Quitar producto"
+                      >
                         <i class="bi bi-trash"></i>
                       </button>
                     </td>
@@ -486,15 +616,33 @@
             </div>
             <div class="row justify-content-end mt-3">
               <div class="col-md-4">
-                <div class="d-flex justify-content-between mb-2"><span>Subtotal</span><strong id="subtotalCompra">S/ 172.80</strong></div>
-                <div class="d-flex justify-content-between mb-2"><span>IGV</span><strong id="igvCompra">S/ 0.00</strong></div>
-                <div class="d-flex justify-content-between mb-2 border-top pt-2"><span>Total</span><strong id="totalCompra">S/ 172.80</strong></div>
-                <div class="d-flex justify-content-between text-primary"><span>Saldo pendiente</span><strong id="saldoCompra">S/ 172.80</strong></div>
+                <div class="d-flex justify-content-between mb-2">
+                  <span>Subtotal</span
+                  ><strong id="subtotalCompra">S/ 172.80</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                  <span>IGV</span><strong id="igvCompra">S/ 0.00</strong>
+                </div>
+                <div
+                  class="d-flex justify-content-between mb-2 border-top pt-2"
+                >
+                  <span>Total</span><strong id="totalCompra">S/ 172.80</strong>
+                </div>
+                <div class="d-flex justify-content-between text-primary">
+                  <span>Saldo pendiente</span
+                  ><strong id="saldoCompra">S/ 172.80</strong>
+                </div>
               </div>
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
+            <button
+              class="btn btn-secondary"
+              type="button"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
             <button class="btn btn-primary" type="submit">
               <i class="bi bi-check-lg me-1"></i>Guardar compra
             </button>
@@ -552,7 +700,11 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
               Cerrar
             </button>
           </div>
@@ -563,17 +715,26 @@
     <script>
       const cantidadCompra = document.getElementById("cantidadCompra");
       const costoCompra = document.getElementById("costoCompra");
-      const subtotalLineaCompra = document.getElementById("subtotalLineaCompra");
+      const subtotalLineaCompra = document.getElementById(
+        "subtotalLineaCompra",
+      );
       const montoPagadoCompra = document.getElementById("montoPagadoCompra");
       const compraCredito = document.getElementById("compraCredito");
-      const fechaVencimientoCompra = document.getElementById("fechaVencimientoCompra");
+      const fechaVencimientoCompra = document.getElementById(
+        "fechaVencimientoCompra",
+      );
       const subtotalCompra = document.getElementById("subtotalCompra");
       const totalCompra = document.getElementById("totalCompra");
       const saldoCompra = document.getElementById("saldoCompra");
 
       function actualizarPagoCompra() {
-        const subtotal = (Number(cantidadCompra.value) || 0) * (Number(costoCompra.value) || 0);
-        const pagoInicial = Math.min(Math.max(Number(montoPagadoCompra.value) || 0, 0), subtotal);
+        const subtotal =
+          (Number(cantidadCompra.value) || 0) *
+          (Number(costoCompra.value) || 0);
+        const pagoInicial = Math.min(
+          Math.max(Number(montoPagadoCompra.value) || 0, 0),
+          subtotal,
+        );
         const saldo = subtotal - pagoInicial;
 
         montoPagadoCompra.value = pagoInicial.toFixed(2);
