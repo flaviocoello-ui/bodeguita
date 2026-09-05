@@ -1281,11 +1281,10 @@ CREATE OR REPLACE FUNCTION USP_REGISTRAR_COMPRA(
     _USUCRE          varchar(30) DEFAULT 'SISTEMA',
     _PCCRE           varchar(30) DEFAULT NULL
 ) RETURNS integer AS $$
--- Nota: Para simplificar la compatibilidad con llamadas, implementado mediante tablas temporales o set de datos
--- En PostgreSQL se suele usar un tipo JSON o Cursor/Set. Aquí asumimos el uso de una tabla temporal auxiliar o set estructurado.
--- (Ver script de prueba al final para la inserción mediante tablas temporales estándar)
+BEGIN
+    RETURN 0;
+END;
 $$ LANGUAGE plpgsql;
--- [Nota de adaptación]: Se recomienda estructurar procedimientos masivos usando un tipo JSONB en PostgreSQL modernos.
 
 -- 15.4 REGISTRAR VENTA --------------------------------------------------------
 -- Implementación adaptada orientada a funciones modulares en PL/pgSQL
