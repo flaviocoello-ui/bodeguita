@@ -248,7 +248,7 @@
       <main class="flex-grow-1 min-width-0 p-3 p-md-4">
         <!-- Barra superior para móvil -->
         <header
-          class="d-md-none d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 border-bottom mb-3"
+          class="d-md-none d-flex flex-wrap justify-content-between align-items-center gap-2 p-2 border-bottom mb-3"
         >
           <button
             class="btn btn-dark"
@@ -258,8 +258,10 @@
             <i class="bi bi-list"></i>
             Menú
           </button>
-          <span class="fw-semibold">Mini Market</span>
-          <i class="bi bi-person-circle fs-4 text-secondary"></i>
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-semibold">Mini Market</span>
+            <i class="bi bi-person-circle fs-4 text-secondary"></i>
+          </div>
         </header>
         <div class="d-flex align-items-center mb-4">
           <h4 class="mb-0">Caja</h4>
@@ -302,7 +304,11 @@
                 class="card-header bg-white d-flex flex-wrap gap-2 justify-content-between align-items-center"
               >
                 <span>Estado de Caja</span>
-                <button class="btn btn-primary btn-sm">
+                <button
+                  class="btn btn-primary btn-sm"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalAbrirCaja"
+                >
                   <i class="bi bi-unlock me-1"></i>Abrir Caja
                 </button>
               </div>
@@ -331,7 +337,11 @@
                           <span class="badge text-bg-success">Abierta</span>
                         </td>
                         <td>
-                          <button class="btn btn-warning btn-sm">
+                          <button
+                            class="btn btn-warning btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalCerrarCaja"
+                          >
                             <i class="bi bi-lock"></i> Cerrar
                           </button>
                         </td>
@@ -460,6 +470,180 @@
       </div>
     </div>
 
+    <!-- Modal Abrir Caja -->
+    <div
+      class="modal fade"
+      id="modalAbrirCaja"
+      tabindex="-1"
+      aria-labelledby="modalAbrirCajaLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalAbrirCajaLabel">
+              <i class="bi bi-unlock me-2"></i>Abrir Caja
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="formAbrirCaja">
+              <div class="mb-3">
+                <label for="cajaSeleccionada" class="form-label fw-semibold"
+                  >Caja</label
+                >
+                <select class="form-select" id="cajaSeleccionada">
+                  <option value="1" selected>
+                    CAJA 01 - Mostrador principal
+                  </option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="montoInicial" class="form-label fw-semibold"
+                  >Monto inicial</label
+                >
+                <div class="input-group">
+                  <span class="input-group-text">S/</span>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="montoInicial"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div class="form-text">
+                  Fondo de caja con el que se apertura el turno.
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="numeroTurno" class="form-label fw-semibold"
+                  >Número de turno</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="numeroTurno"
+                  readonly
+                />
+                <div class="form-text">
+                  Generado automáticamente con la fecha de apertura.
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button type="button" class="btn btn-primary" id="btnAperturarCaja">
+              <i class="bi bi-unlock me-1"></i>Aperturar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Cerrar Caja -->
+    <div
+      class="modal fade"
+      id="modalCerrarCaja"
+      tabindex="-1"
+      aria-labelledby="modalCerrarCajaLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalCerrarCajaLabel">
+              <i class="bi bi-lock me-2"></i>Cerrar Caja
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="formCerrarCaja">
+              <div class="mb-3">
+                <label for="montoDeclarado" class="form-label fw-semibold"
+                  >Monto declarado</label
+                >
+                <div class="input-group">
+                  <span class="input-group-text">S/</span>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="montoDeclarado"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div class="form-text">
+                  Dinero en efectivo contado al momento de cerrar la caja.
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="observacionCierre" class="form-label fw-semibold"
+                  >Observación</label
+                >
+                <textarea
+                  class="form-control"
+                  id="observacionCierre"
+                  rows="3"
+                  maxlength="200"
+                  placeholder="Opcional"
+                ></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button type="button" class="btn btn-warning" id="btnCerrarCaja">
+              <i class="bi bi-lock me-1"></i>Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="../assets/theme.js"></script>
+    <script>
+      (function () {
+        var modal = document.getElementById("modalAbrirCaja");
+        var turnoInput = document.getElementById("numeroTurno");
+        if (!modal || !turnoInput) return;
+        modal.addEventListener("show.bs.modal", function () {
+          var d = new Date();
+          var y = d.getFullYear();
+          var m = String(d.getMonth() + 1).padStart(2, "0");
+          var dia = String(d.getDate()).padStart(2, "0");
+          var hh = String(d.getHours()).padStart(2, "0");
+          var mm = String(d.getMinutes()).padStart(2, "0");
+          turnoInput.value = "" + y + m + dia + "-" + hh + mm;
+        });
+      })();
+    </script>
   </body>
 </html>

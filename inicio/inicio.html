@@ -12,18 +12,18 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
       rel="stylesheet"
     />
-        <link href="../assets/fonts.css" rel="stylesheet" />
-<link href="../assets/themes.css" rel="stylesheet" />
+    <link href="../assets/fonts.css" rel="stylesheet" />
+    <link href="../assets/themes.css" rel="stylesheet" />
     <link href="../assets/global.css" rel="stylesheet" />
-  <script>
-    (function () {
-      try {
-        if (localStorage.getItem('mm-theme') === 'oscuro') {
-          document.documentElement.setAttribute('data-theme', 'oscuro');
-        }
-      } catch (e) {}
-    })();
-  </script>
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem("mm-theme") === "oscuro") {
+            document.documentElement.setAttribute("data-theme", "oscuro");
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div class="d-flex">
@@ -45,7 +45,11 @@
         <!-- Menú de módulos -->
         <ul class="nav nav-pills flex-column mb-auto">
           <li class="nav-item">
-            <a href="../inicio/inicio.html" class="nav-link active" aria-current="page">
+            <a
+              href="../inicio/inicio.html"
+              class="nav-link active"
+              aria-current="page"
+            >
               <i class="bi bi-house me-2"></i>
               Inicio
             </a>
@@ -57,7 +61,10 @@
             </a>
           </li>
           <li class="nav-item">
-            <a href="../mantenimiento/mantenimiento.html" class="nav-link text-white">
+            <a
+              href="../mantenimiento/mantenimiento.html"
+              class="nav-link text-white"
+            >
               <i class="bi bi-gear me-2"></i>
               Mantenimiento
             </a>
@@ -114,7 +121,11 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-dark">
             <li>
-              <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalConfiguracion"
+              <a
+                class="dropdown-item"
+                href="#"
+                data-bs-toggle="modal"
+                data-bs-target="#modalConfiguracion"
                 ><i class="bi bi-gear me-2"></i>Configuración</a
               >
             </li>
@@ -182,7 +193,10 @@
               </a>
             </li>
             <li class="nav-item">
-              <a href="../inventario/inventario.html" class="nav-link text-white">
+              <a
+                href="../inventario/inventario.html"
+                class="nav-link text-white"
+              >
                 <i class="bi bi-box-seam me-2"></i>
                 Inventario
               </a>
@@ -248,7 +262,7 @@
       <main class="flex-grow-1 min-width-0 p-3 p-md-4">
         <!-- Barra superior para móvil -->
         <header
-          class="d-md-none d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 border-bottom mb-3"
+          class="d-md-none d-flex flex-wrap justify-content-between align-items-center gap-2 p-2 border-bottom mb-3"
         >
           <button
             class="btn btn-dark"
@@ -258,15 +272,16 @@
             <i class="bi bi-list"></i>
             Menú
           </button>
-          <span class="fw-semibold">Mini Market</span>
-          <i class="bi bi-person-circle fs-4 text-secondary"></i>
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-semibold">Mini Market</span>
+            <i class="bi bi-person-circle fs-4 text-secondary"></i>
+          </div>
         </header>
         <div class="d-flex align-items-center mb-4">
           <div>
             <h4 class="mb-0">Dashboard</h4>
             <span class="text-muted">Bienvenido, ADMIN</span>
           </div>
-          
         </div>
 
         <!-- Indicadores clave (KPI) -->
@@ -353,8 +368,10 @@
                 </select>
               </div>
               <div class="card-body">
-                <div class="bg-secondary bg-opacity-10 rounded d-flex align-items-center justify-content-center"
-                     style="height: 220px">
+                <div
+                  class="bg-secondary bg-opacity-10 rounded d-flex align-items-center justify-content-center"
+                  style="height: 220px"
+                >
                   <span class="text-muted">Gráfico de ventas aquí</span>
                 </div>
               </div>
@@ -465,7 +482,11 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
               Cerrar
             </button>
           </div>
