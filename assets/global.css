@@ -5,6 +5,41 @@
    ============================================ */
 
 /* ============================================
+   LAYOUT / RESPONSIVE
+   Red de seguridad: evita scroll horizontal de
+   página por contenido que desborda (pestañas
+   flex-nowrap, tablas anchas, etc.).
+   ============================================ */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Utilidad: permite a flex items encogerse por
+   debajo de su contenido. No existe en Bootstrap. */
+.min-width-0 {
+  min-width: 0 !important;
+}
+
+/* Columna fija (sticky) en tablas anchas: la primera
+   columna queda visible al scrollear horizontalmente.
+   Uso: #nombreTabla thead th:first-child / td:first-child
+   (aplicado a la matriz de permisos). */
+#tablaPermisos thead th:first-child,
+#tablaPermisos tbody tr:not(.table-secondary) td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background-color: var(--bs-table-bg, #fff);
+  box-shadow: inset -1px 0 0 var(--color-border);
+}
+
+#tablaPermisos tbody tr:hover td:first-child {
+  background-color: var(--bs-table-hover-bg, var(--bs-table-bg, #fff));
+}
+
+/* ============================================
    BOTONES
    ============================================ */
 .btn-primary {

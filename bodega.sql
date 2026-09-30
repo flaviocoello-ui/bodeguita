@@ -1,9 +1,24 @@
 /*==============================================================================
   SISTEMA WEB DE VENTAS Y CONTROL DE INVENTARIO
   BODEGA "TIA MARTHA" - VERDICIÓN POSTGRESQL (PL/pgSQL)
+
+  CONVENCIONES APLICADAS
+  ----------------------
+  * Todos los identificadores (tablas, columnas, constraints, índices, vistas,
+    tipos compuestos, funciones y triggers) están en snake_case MINÚSCULA,
+    exactamente como los reporta el catálogo de PostgreSQL.
+  * Claves primarias : bigserial  -> se mapea como java.lang.Long
+  * Claves foráneas  : bigint     -> se mapea como java.lang.Long
+  * Se eliminó todo char(n): en su lugar varchar(n). char(n) rellena con
+    espacios a la derecha y produce inconsistencias al comparar, filtrar o
+    mapear ('TICKET' en char(11) se guardaba como 'TICKET     ').
+  * Columnas de auditoría renombradas: usu_cre, pc_cre, fec_cre,
+    usu_mod, pc_mod, fec_mod.
+  * Constraints: pk_<tabla>, fk_<tabla>_<tabla_ref>, uq_<tabla>_<cols>,
+    ck_<tabla>_<regla>. Índices: ix_<tabla>_<cols>, ux_<tabla>_<cols>.
 ==============================================================================*/
 
-DROP DATABASE IF EXISTS bd_bodega_tia_martha;
+DROP DATABASE IF EXISTS bd_bodega_tia_martha WITH (FORCE);
 CREATE DATABASE bd_bodega_tia_martha;
 
 \c bd_bodega_tia_martha;
@@ -11,968 +26,969 @@ CREATE DATABASE bd_bodega_tia_martha;
 /*==============================================================================
   1. UBICACION GEOGRAFICA
 ==============================================================================*/
-CREATE TABLE DEPARTAMENTO(
-    ID_Departamento     serial        NOT NULL,
-    N_Departamento      varchar(30)   NOT NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_DEPARTAMENTO PRIMARY KEY (ID_Departamento)
+CREATE TABLE departamento (
+    id_departamento     bigserial     NOT NULL,
+    n_departamento      varchar(30)   NOT NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_departamento PRIMARY KEY (id_departamento)
 );
 
-CREATE TABLE PROVINCIA(
-    ID_Provincia        serial        NOT NULL,
-    ID_Departamento     integer       NOT NULL,
-    N_Provincia         varchar(30)   NOT NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_PROVINCIA PRIMARY KEY (ID_Provincia),
-    CONSTRAINT FK_PROVINCIA_DEPARTAMENTO FOREIGN KEY (ID_Departamento)
-        REFERENCES DEPARTAMENTO(ID_Departamento)
+CREATE TABLE provincia (
+    id_provincia        bigserial     NOT NULL,
+    id_departamento     bigint        NOT NULL,
+    n_provincia         varchar(30)   NOT NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_provincia PRIMARY KEY (id_provincia),
+    CONSTRAINT fk_provincia_departamento FOREIGN KEY (id_departamento)
+        REFERENCES departamento(id_departamento)
 );
 
-CREATE TABLE DISTRITO(
-    ID_Distrito         serial        NOT NULL,
-    ID_Provincia        integer       NOT NULL,
-    D_Distrito          varchar(40)   NOT NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_DISTRITO PRIMARY KEY (ID_Distrito),
-    CONSTRAINT FK_DISTRITO_PROVINCIA FOREIGN KEY (ID_Provincia)
-        REFERENCES PROVINCIA(ID_Provincia)
+CREATE TABLE distrito (
+    id_distrito         bigserial     NOT NULL,
+    id_provincia        bigint        NOT NULL,
+    d_distrito          varchar(40)   NOT NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_distrito PRIMARY KEY (id_distrito),
+    CONSTRAINT fk_distrito_provincia FOREIGN KEY (id_provincia)
+        REFERENCES provincia(id_provincia)
 );
 
 /*==============================================================================
   2. PERSONAS, EMPRESAS Y PERSONAL
 ==============================================================================*/
-CREATE TABLE TIPO_IDENTIDAD(
-    ID_TipoIdentidad    serial        NOT NULL,
-    N_TipoIdentidad     varchar(20)   NOT NULL,
-    Abreviatura         varchar(10)   NULL,
-    Longitud            integer       NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_TIPO_IDENTIDAD PRIMARY KEY (ID_TipoIdentidad)
+CREATE TABLE tipo_identidad (
+    id_tipo_identidad   bigserial     NOT NULL,
+    n_tipo_identidad    varchar(20)   NOT NULL,
+    abreviatura         varchar(10)   NULL,
+    longitud            integer       NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_tipo_identidad PRIMARY KEY (id_tipo_identidad)
 );
 
-CREATE TABLE PERSONA(
-    ID_Persona          serial        NOT NULL,
-    ID_Distrito         integer       NULL,
-    ID_TipoIdentidad    integer       NOT NULL,
-    N_Documento         varchar(15)   NOT NULL,
-    Nombre              varchar(80)   NOT NULL,
-    Ap_Paterno          varchar(80)   NULL,
-    Ap_Materno          varchar(80)   NULL,
-    F_Nacimiento        date          NULL,
-    EMAIL               varchar(50)   NULL,
-    Celular             char(9)       NULL,
-    Genero              char(1)       NULL,
-    Direccion           varchar(100)  NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_PERSONA PRIMARY KEY (ID_Persona),
-    CONSTRAINT FK_PERSONA_DISTRITO FOREIGN KEY (ID_Distrito)
-        REFERENCES DISTRITO(ID_Distrito),
-    CONSTRAINT FK_PERSONA_TIPO_IDENTIDAD FOREIGN KEY (ID_TipoIdentidad)
-        REFERENCES TIPO_IDENTIDAD(ID_TipoIdentidad),
-    CONSTRAINT CK_PERSONA_GENERO CHECK (Genero IN ('M','F','O') OR Genero IS NULL)
+CREATE TABLE persona (
+    id_persona          bigserial     NOT NULL,
+    id_distrito         bigint        NULL,
+    id_tipo_identidad   bigint        NOT NULL,
+    n_documento         varchar(15)   NOT NULL,
+    nombre              varchar(80)   NOT NULL,
+    ap_paterno          varchar(80)   NULL,
+    ap_materno          varchar(80)   NULL,
+    f_nacimiento        date          NULL,
+    email               varchar(50)   NULL,
+    celular             varchar(9)    NULL,
+    genero              varchar(1)    NULL,
+    direccion           varchar(100)  NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_persona PRIMARY KEY (id_persona),
+    CONSTRAINT fk_persona_distrito FOREIGN KEY (id_distrito)
+        REFERENCES distrito(id_distrito),
+    CONSTRAINT fk_persona_tipo_identidad FOREIGN KEY (id_tipo_identidad)
+        REFERENCES tipo_identidad(id_tipo_identidad),
+    CONSTRAINT ck_persona_genero CHECK (genero IN ('M','F','O') OR genero IS NULL)
 );
 
-CREATE TABLE EMPRESA(
-    ID_Empresa          serial        NOT NULL,
-    RUC                 char(11)      NOT NULL,
-    Razon_Social        varchar(140)  NOT NULL,
-    Direccion           varchar(150)  NULL,
-    Telefono            char(8)       NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_EMPRESA PRIMARY KEY (ID_Empresa)
+CREATE TABLE empresa (
+    id_empresa          bigserial     NOT NULL,
+    ruc                 varchar(11)   NOT NULL,
+    razon_social        varchar(140)  NOT NULL,
+    direccion           varchar(150)  NULL,
+    telefono            varchar(8)    NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_empresa PRIMARY KEY (id_empresa)
 );
 
-CREATE TABLE CARGO(
-    ID_Cargo            serial        NOT NULL,
-    N_Cargo             varchar(40)   NOT NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_CARGO PRIMARY KEY (ID_Cargo)
+CREATE TABLE cargo (
+    id_cargo            bigserial     NOT NULL,
+    n_cargo             varchar(40)   NOT NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_cargo PRIMARY KEY (id_cargo)
 );
 
-CREATE TABLE CONTRATO(
-    ID_Contrato         serial        NOT NULL,
-    N_Contrato          varchar(40)   NOT NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_CONTRATO PRIMARY KEY (ID_Contrato)
+CREATE TABLE contrato (
+    id_contrato         bigserial     NOT NULL,
+    n_contrato          varchar(40)   NOT NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_contrato PRIMARY KEY (id_contrato)
 );
 
-CREATE TABLE EMPLEADO(
-    ID_Empleado         serial        NOT NULL,
-    ID_Persona          integer       NOT NULL,
-    ID_Contrato         integer       NULL,
-    ID_Cargo            integer       NULL,
-    Salario             numeric(8,2)  NULL,
-    Turno               varchar(18)   NULL,
-    Fondo_Pension       char(3)       NULL,
-    N_Hps               char(11)      NULL,
-    ESSALUD             char(6)       NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_EMPLEADO PRIMARY KEY (ID_Empleado),
-    CONSTRAINT FK_EMPLEADO_PERSONA  FOREIGN KEY (ID_Persona)  REFERENCES PERSONA(ID_Persona),
-    CONSTRAINT FK_EMPLEADO_CONTRATO FOREIGN KEY (ID_Contrato) REFERENCES CONTRATO(ID_Contrato),
-    CONSTRAINT FK_EMPLEADO_CARGO    FOREIGN KEY (ID_Cargo)    REFERENCES CARGO(ID_Cargo)
+CREATE TABLE empleado (
+    id_empleado         bigserial     NOT NULL,
+    id_persona          bigint        NOT NULL,
+    id_contrato         bigint        NULL,
+    id_cargo            bigint        NULL,
+    salario             numeric(8,2)  NULL,
+    turno               varchar(18)   NULL,
+    fondo_pension       varchar(3)    NULL,
+    n_hps               varchar(11)   NULL,
+    essalud             varchar(6)    NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_empleado PRIMARY KEY (id_empleado),
+    CONSTRAINT fk_empleado_persona  FOREIGN KEY (id_persona)  REFERENCES persona(id_persona),
+    CONSTRAINT fk_empleado_contrato FOREIGN KEY (id_contrato) REFERENCES contrato(id_contrato),
+    CONSTRAINT fk_empleado_cargo    FOREIGN KEY (id_cargo)    REFERENCES cargo(id_cargo)
 );
 
 /*==============================================================================
   3. SEGURIDAD: USUARIOS, ROLES Y PERMISOS
 ==============================================================================*/
-CREATE TABLE TIPO_USUARIO(
-    ID_TipoUsuario      serial        NOT NULL,
-    N_TipoUsuario       varchar(50)   NOT NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_TIPO_USUARIO PRIMARY KEY (ID_TipoUsuario)
+CREATE TABLE tipo_usuario (
+    id_tipo_usuario     bigserial     NOT NULL,
+    n_tipo_usuario      varchar(50)   NOT NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_tipo_usuario PRIMARY KEY (id_tipo_usuario)
 );
 
-CREATE TABLE USUARIO(
-    ID_Usuario          serial        NOT NULL,
-    ID_TipoUsuario      integer       NOT NULL,
-    ID_Empleado         integer       NULL,
-    Logeo               varchar(30)   NOT NULL,
-    Clave               varchar(200)  NOT NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_USUARIO PRIMARY KEY (ID_Usuario),
-    CONSTRAINT UQ_USUARIO_LOGEO UNIQUE (Logeo),
-    CONSTRAINT FK_USUARIO_TIPO_USUARIO FOREIGN KEY (ID_TipoUsuario)
-        REFERENCES TIPO_USUARIO(ID_TipoUsuario),
-    CONSTRAINT FK_USUARIO_EMPLEADO FOREIGN KEY (ID_Empleado)
-        REFERENCES EMPLEADO(ID_Empleado)
+CREATE TABLE usuario (
+    id_usuario          bigserial     NOT NULL,
+    id_tipo_usuario     bigint        NOT NULL,
+    id_empleado         bigint        NULL,
+    logeo               varchar(30)   NOT NULL,
+    clave               varchar(200)  NOT NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_usuario PRIMARY KEY (id_usuario),
+    CONSTRAINT uq_usuario_logeo UNIQUE (logeo),
+    CONSTRAINT fk_usuario_tipo_usuario FOREIGN KEY (id_tipo_usuario)
+        REFERENCES tipo_usuario(id_tipo_usuario),
+    CONSTRAINT fk_usuario_empleado FOREIGN KEY (id_empleado)
+        REFERENCES empleado(id_empleado)
 );
 
-CREATE TABLE MODULO(
-    ID_Modulo           serial        NOT NULL,
-    N_Modulo            varchar(50)   NOT NULL,
-    Descripcion         varchar(100)  NULL,
-    Icono               varchar(50)   NULL,
-    Orden               integer       NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_MODULO PRIMARY KEY (ID_Modulo)
+CREATE TABLE modulo (
+    id_modulo           bigserial     NOT NULL,
+    n_modulo            varchar(50)   NOT NULL,
+    descripcion         varchar(100)  NULL,
+    icono               varchar(50)   NULL,
+    orden               integer       NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_modulo PRIMARY KEY (id_modulo)
 );
 
-CREATE TABLE ROL(
-    ID_Rol              serial        NOT NULL,
-    N_Rol               varchar(50)   NOT NULL,
-    Descripcion         varchar(100)  NULL,
-    Nivel               integer       NULL,
-    F_Creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_ROL PRIMARY KEY (ID_Rol),
-    CONSTRAINT UQ_ROL_NOMBRE UNIQUE (N_Rol)
+CREATE TABLE rol (
+    id_rol              bigserial     NOT NULL,
+    n_rol               varchar(50)   NOT NULL,
+    descripcion         varchar(100)  NULL,
+    nivel               integer       NULL,
+    f_creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_rol PRIMARY KEY (id_rol),
+    CONSTRAINT uq_rol_nombre UNIQUE (n_rol)
 );
 
-CREATE TABLE PERMISO(
-    ID_Permiso          serial        NOT NULL,
-    ID_Modulo           integer       NOT NULL,
-    N_Permiso           varchar(50)   NOT NULL,
-    Clave               varchar(50)   NOT NULL,
-    Descripcion         varchar(100)  NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_PERMISO PRIMARY KEY (ID_Permiso),
-    CONSTRAINT UQ_PERMISO_CLAVE UNIQUE (Clave),
-    CONSTRAINT FK_PERMISO_MODULO FOREIGN KEY (ID_Modulo) REFERENCES MODULO(ID_Modulo)
+CREATE TABLE permiso (
+    id_permiso          bigserial     NOT NULL,
+    id_modulo           bigint        NOT NULL,
+    n_permiso           varchar(50)   NOT NULL,
+    clave               varchar(50)   NOT NULL,
+    descripcion         varchar(100)  NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_permiso PRIMARY KEY (id_permiso),
+    CONSTRAINT uq_permiso_clave UNIQUE (clave),
+    CONSTRAINT fk_permiso_modulo FOREIGN KEY (id_modulo) REFERENCES modulo(id_modulo)
 );
 
-CREATE TABLE ROL_PERMISO(
-    ID_RolPermiso       serial        NOT NULL,
-    ID_Rol              integer       NOT NULL,
-    ID_Permiso          integer       NOT NULL,
-    Concedido           char(1)       NOT NULL DEFAULT '1',
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_ROL_PERMISO PRIMARY KEY (ID_RolPermiso),
-    CONSTRAINT UQ_ROL_PERMISO UNIQUE (ID_Rol, ID_Permiso),
-    CONSTRAINT FK_ROLPERMISO_ROL     FOREIGN KEY (ID_Rol)     REFERENCES ROL(ID_Rol),
-    CONSTRAINT FK_ROLPERMISO_PERMISO FOREIGN KEY (ID_Permiso) REFERENCES PERMISO(ID_Permiso)
+CREATE TABLE rol_permiso (
+    id_rol_permiso      bigserial     NOT NULL,
+    id_rol              bigint        NOT NULL,
+    id_permiso          bigint        NOT NULL,
+    concedido          varchar(1)    NOT NULL DEFAULT '1',
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_rol_permiso PRIMARY KEY (id_rol_permiso),
+    CONSTRAINT uq_rol_permiso UNIQUE (id_rol, id_permiso),
+    CONSTRAINT fk_rol_permiso_rol     FOREIGN KEY (id_rol)     REFERENCES rol(id_rol),
+    CONSTRAINT fk_rol_permiso_permiso FOREIGN KEY (id_permiso) REFERENCES permiso(id_permiso)
 );
 
-CREATE TABLE USUARIO_ROL(
-    ID_UsuarioRol       serial        NOT NULL,
-    ID_Usuario          integer       NOT NULL,
-    ID_Rol              integer       NOT NULL,
-    F_Asignacion        timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    Vigente             char(1)       NOT NULL DEFAULT '1',
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_USUARIO_ROL PRIMARY KEY (ID_UsuarioRol),
-    CONSTRAINT UQ_USUARIO_ROL UNIQUE (ID_Usuario, ID_Rol),
-    CONSTRAINT FK_USUARIOROL_USUARIO FOREIGN KEY (ID_Usuario) REFERENCES USUARIO(ID_Usuario),
-    CONSTRAINT FK_USUARIOROL_ROL     FOREIGN KEY (ID_Rol)     REFERENCES ROL(ID_Rol)
+CREATE TABLE usuario_rol (
+    id_usuario_rol      bigserial     NOT NULL,
+    id_usuario          bigint        NOT NULL,
+    id_rol              bigint        NOT NULL,
+    f_asignacion        timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    vigente             varchar(1)    NOT NULL DEFAULT '1',
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_usuario_rol PRIMARY KEY (id_usuario_rol),
+    CONSTRAINT uq_usuario_rol UNIQUE (id_usuario, id_rol),
+    CONSTRAINT fk_usuario_rol_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
+    CONSTRAINT fk_usuario_rol_rol     FOREIGN KEY (id_rol)     REFERENCES rol(id_rol)
 );
 
-CREATE TABLE AUDITORIA(
-    ID_Auditoria        serial        NOT NULL,
-    ID_Usuario          integer       NULL,
-    N_Tabla             varchar(50)   NOT NULL,
-    Accion              varchar(20)   NOT NULL,
-    ID_Registro         integer       NULL,
-    Valor_Anterior      varchar(500)  NULL,
-    Valor_Nuevo         varchar(500)  NULL,
-    F_Evento            timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    IP                  varchar(20)   NULL,
-    Terminal            varchar(30)   NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_AUDITORIA PRIMARY KEY (ID_Auditoria),
-    CONSTRAINT FK_AUDITORIA_USUARIO FOREIGN KEY (ID_Usuario) REFERENCES USUARIO(ID_Usuario)
+CREATE TABLE auditoria (
+    id_auditoria        bigserial     NOT NULL,
+    id_usuario          bigint        NULL,
+    n_tabla             varchar(50)   NOT NULL,
+    accion              varchar(20)   NOT NULL,
+    id_registro         bigint        NULL,
+    valor_anterior      varchar(500)  NULL,
+    valor_nuevo         varchar(500)  NULL,
+    f_evento            timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    ip                  varchar(20)   NULL,
+    terminal            varchar(30)   NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_auditoria PRIMARY KEY (id_auditoria),
+    CONSTRAINT fk_auditoria_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
 );
 
 /*==============================================================================
   4. MODULO DE CAJA
 ==============================================================================*/
-CREATE TABLE CAJA(
-    ID_Caja             serial        NOT NULL,
-    N_Caja              varchar(50)   NOT NULL,
-    Descripcion         varchar(100)  NULL,
-    Ubicacion           varchar(100)  NULL,
-    Serie_Terminal      varchar(30)   NULL,
-    Moneda              char(3)       NOT NULL DEFAULT 'PEN',
-    Monto_Base          numeric(12,2) NULL DEFAULT 0,
-    Aperturada          char(1)       NOT NULL DEFAULT '0',
-    F_Creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_CAJA PRIMARY KEY (ID_Caja)
+CREATE TABLE caja (
+    id_caja             bigserial     NOT NULL,
+    n_caja              varchar(50)   NOT NULL,
+    descripcion         varchar(100)  NULL,
+    ubicacion           varchar(100)  NULL,
+    serie_terminal      varchar(30)   NULL,
+    moneda              varchar(3)    NOT NULL DEFAULT 'PEN',
+    monto_base          numeric(12,2) NULL DEFAULT 0,
+    aperturada          varchar(1)    NOT NULL DEFAULT '0',
+    f_creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_caja PRIMARY KEY (id_caja)
 );
 
-CREATE TABLE APERTURA_CAJA(
-    ID_AperturaCaja     serial        NOT NULL,
-    ID_Caja             integer       NOT NULL,
-    ID_Usuario          integer       NOT NULL,
-    ID_UsuarioCierre    integer       NULL,
-    Numero_Turno        varchar(20)   NULL,
-    F_Apertura          timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    F_Cierre            timestamp     NULL,
-    Monto_Inicial       numeric(12,2) NOT NULL DEFAULT 0,
-    Total_Ingresos      numeric(12,2) NULL DEFAULT 0,
-    Total_Egresos       numeric(12,2) NULL DEFAULT 0,
-    Monto_Sistema       numeric(12,2) NULL DEFAULT 0,
-    Monto_Declarado     numeric(12,2) NULL DEFAULT 0,
-    Diferencia          numeric(12,2) NULL DEFAULT 0,
-    Situacion           char(1)       NOT NULL DEFAULT 'A',
-    Observacion         varchar(200)  NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_APERTURA_CAJA PRIMARY KEY (ID_AperturaCaja),
-    CONSTRAINT FK_APERTURACAJA_CAJA    FOREIGN KEY (ID_Caja)          REFERENCES CAJA(ID_Caja),
-    CONSTRAINT FK_APERTURACAJA_USUARIO FOREIGN KEY (ID_Usuario)       REFERENCES USUARIO(ID_Usuario),
-    CONSTRAINT FK_APERTURACAJA_USUCIE  FOREIGN KEY (ID_UsuarioCierre) REFERENCES USUARIO(ID_Usuario)
+CREATE TABLE apertura_caja (
+    id_apertura_caja    bigserial     NOT NULL,
+    id_caja             bigint        NOT NULL,
+    id_usuario          bigint        NOT NULL,
+    id_usuario_cierre   bigint        NULL,
+    numero_turno        varchar(20)   NULL,
+    f_apertura          timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    f_cierre            timestamp     NULL,
+    monto_inicial       numeric(12,2) NOT NULL DEFAULT 0,
+    total_ingresos      numeric(12,2) NULL DEFAULT 0,
+    total_egresos       numeric(12,2) NULL DEFAULT 0,
+    monto_sistema       numeric(12,2) NULL DEFAULT 0,
+    monto_declarado     numeric(12,2) NULL DEFAULT 0,
+    diferencia          numeric(12,2) NULL DEFAULT 0,
+    situacion           varchar(1)    NOT NULL DEFAULT 'A',
+    observacion         varchar(200)  NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_apertura_caja PRIMARY KEY (id_apertura_caja),
+    CONSTRAINT fk_apertura_caja_caja           FOREIGN KEY (id_caja)           REFERENCES caja(id_caja),
+    CONSTRAINT fk_apertura_caja_usuario        FOREIGN KEY (id_usuario)        REFERENCES usuario(id_usuario),
+    CONSTRAINT fk_apertura_caja_usuario_cierre FOREIGN KEY (id_usuario_cierre) REFERENCES usuario(id_usuario)
 );
 
-CREATE TABLE TIPO_MOVIMIENTO_CAJA(
-    ID_TipoMovimiento   serial        NOT NULL,
-    N_TipoMovimiento    varchar(30)   NOT NULL,
-    Abreviatura         varchar(10)   NULL,
-    Signo               char(1)       NOT NULL,
-    F_Creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_TIPO_MOVIMIENTO_CAJA PRIMARY KEY (ID_TipoMovimiento),
-    CONSTRAINT CK_TIPOMOVCAJA_SIGNO CHECK (Signo IN ('+','-'))
+CREATE TABLE tipo_movimiento_caja (
+    id_tipo_movimiento  bigserial     NOT NULL,
+    n_tipo_movimiento   varchar(30)   NOT NULL,
+    abreviatura         varchar(10)   NULL,
+    signo               varchar(1)    NOT NULL,
+    f_creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_tipo_movimiento_caja PRIMARY KEY (id_tipo_movimiento),
+    CONSTRAINT ck_tipo_movimiento_caja_signo CHECK (signo IN ('+','-'))
 );
 
-CREATE TABLE CONCEPTO_CAJA(
-    ID_Concepto         serial        NOT NULL,
-    ID_TipoMovimiento   integer       NOT NULL,
-    N_Concepto          varchar(60)   NOT NULL,
-    Descripcion         varchar(150)  NULL,
-    Afecta_Efectivo     char(1)       NOT NULL DEFAULT '1',
-    F_Creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_CONCEPTO_CAJA PRIMARY KEY (ID_Concepto),
-    CONSTRAINT FK_CONCEPTOCAJA_TIPO FOREIGN KEY (ID_TipoMovimiento)
-        REFERENCES TIPO_MOVIMIENTO_CAJA(ID_TipoMovimiento)
+CREATE TABLE concepto_caja (
+    id_concepto         bigserial     NOT NULL,
+    id_tipo_movimiento  bigint        NOT NULL,
+    n_concepto          varchar(60)   NOT NULL,
+    descripcion         varchar(150)  NULL,
+    afecta_efectivo     varchar(1)    NOT NULL DEFAULT '1',
+    f_creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_concepto_caja PRIMARY KEY (id_concepto),
+    CONSTRAINT fk_concepto_caja_tipo_movimiento FOREIGN KEY (id_tipo_movimiento)
+        REFERENCES tipo_movimiento_caja(id_tipo_movimiento)
 );
 
 /*==============================================================================
   5. CATALOGO DE PRODUCTOS Y ALMACENES
 ==============================================================================*/
-CREATE TABLE ALMACEN(
-    ID_Almacen          serial        NOT NULL,
-    N_Almacen           varchar(50)   NOT NULL,
-    Descripcion         varchar(100)  NULL,
-    Ubicacion           varchar(100)  NULL,
-    Es_Principal        char(1)       NOT NULL DEFAULT '0',
-    F_Creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_ALMACEN PRIMARY KEY (ID_Almacen)
+CREATE TABLE almacen (
+    id_almacen          bigserial     NOT NULL,
+    n_almacen           varchar(50)   NOT NULL,
+    descripcion         varchar(100)  NULL,
+    ubicacion           varchar(100)  NULL,
+    es_principal        varchar(1)    NOT NULL DEFAULT '0',
+    f_creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_almacen PRIMARY KEY (id_almacen)
 );
 
-CREATE TABLE UNIDAD_MEDIDA(
-    ID_UnidadMedida     serial        NOT NULL,
-    N_UnidadMedida      varchar(30)   NOT NULL,
-    Abreviatura         varchar(10)   NULL,
-    F_Creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_UNIDAD_MEDIDA PRIMARY KEY (ID_UnidadMedida)
+CREATE TABLE unidad_medida (
+    id_unidad_medida    bigserial     NOT NULL,
+    n_unidad_medida     varchar(30)   NOT NULL,
+    abreviatura         varchar(10)   NULL,
+    f_creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_unidad_medida PRIMARY KEY (id_unidad_medida)
 );
 
-CREATE TABLE MARCA(
-    ID_Marca            serial        NOT NULL,
-    N_Marca             varchar(50)   NOT NULL,
-    Descripcion         varchar(100)  NULL,
-    F_Creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_MARCA PRIMARY KEY (ID_Marca)
+CREATE TABLE marca (
+    id_marca            bigserial     NOT NULL,
+    n_marca             varchar(50)   NOT NULL,
+    descripcion         varchar(100)  NULL,
+    f_creacion          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_marca PRIMARY KEY (id_marca)
 );
 
-CREATE TABLE CATEGORIA_PRODUCTO(
-    ID_CategoriaProducto serial       NOT NULL,
-    N_CategoriaProducto  varchar(50)  NOT NULL,
-    Descripcion          varchar(100) NULL,
-    F_Creacion           timestamp    NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE               varchar(30)  NULL,
-    PCCRE                varchar(30)  NULL,
-    FECCRE               timestamp    NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD               varchar(30)  NULL,
-    PCMOD                varchar(30)  NULL,
-    FECMOD               timestamp    NULL,
-    ESTADO               char(1)      NOT NULL DEFAULT '1',
-    CONSTRAINT PK_CATEGORIA_PRODUCTO PRIMARY KEY (ID_CategoriaProducto)
+CREATE TABLE categoria_producto (
+    id_categoria_producto bigserial    NOT NULL,
+    n_categoria_producto  varchar(50)  NOT NULL,
+    descripcion           varchar(100) NULL,
+    f_creacion            timestamp    NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre               varchar(30)  NULL,
+    pc_cre                varchar(30)  NULL,
+    fec_cre               timestamp    NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod               varchar(30)  NULL,
+    pc_mod                varchar(30)  NULL,
+    fec_mod               timestamp    NULL,
+    estado                varchar(1)   NOT NULL DEFAULT '1',
+    CONSTRAINT pk_categoria_producto PRIMARY KEY (id_categoria_producto)
 );
 
-CREATE TABLE PRODUCTO(
-    ID_Producto          serial        NOT NULL,
-    ID_CategoriaProducto integer       NOT NULL,
-    ID_Marca             integer       NULL,
-    Codigo_Barras        varchar(30)   NULL,
-    N_Producto           varchar(50)   NOT NULL,
-    Detalle              varchar(100)  NULL,
-    P_Compra             numeric(10,2) NOT NULL DEFAULT 0,
-    P_Venta              numeric(10,2) NOT NULL DEFAULT 0,
-    P_Mayoreo            numeric(10,2) NULL DEFAULT 0,
-    Stock_Actual         numeric(12,3) NOT NULL DEFAULT 0,
-    Stock_Minimo         numeric(12,3) NOT NULL DEFAULT 0,
-    Stock_Maximo         numeric(12,3) NULL DEFAULT 0,
-    Afecto_IGV           char(1)       NOT NULL DEFAULT '1',
-    Es_Perecible         char(1)       NOT NULL DEFAULT '0',
-    Imagen               varchar(200)  NULL,
-    F_Creacion           timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE               varchar(30)   NULL,
-    PCCRE                varchar(30)   NULL,
-    FECCRE               timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD               varchar(30)   NULL,
-    PCMOD                varchar(30)   NULL,
-    FECMOD               timestamp     NULL,
-    ESTADO               char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_PRODUCTO PRIMARY KEY (ID_Producto),
-    CONSTRAINT FK_PRODUCTO_CATEGORIA FOREIGN KEY (ID_CategoriaProducto)
-        REFERENCES CATEGORIA_PRODUCTO(ID_CategoriaProducto),
-    CONSTRAINT FK_PRODUCTO_MARCA     FOREIGN KEY (ID_Marca)
-        REFERENCES MARCA(ID_Marca),
-    CONSTRAINT CK_PRODUCTO_PRECIO CHECK (P_Venta >= 0 AND P_Compra >= 0)
+CREATE TABLE producto (
+    id_producto          bigserial     NOT NULL,
+    id_categoria_producto bigint       NOT NULL,
+    id_marca             bigint        NULL,
+    codigo_barras        varchar(30)   NULL,
+    n_producto           varchar(50)   NOT NULL,
+    detalle              varchar(100)  NULL,
+    p_compra             numeric(10,2) NOT NULL DEFAULT 0,
+    p_venta              numeric(10,2) NOT NULL DEFAULT 0,
+    p_mayoreo            numeric(10,2) NULL DEFAULT 0,
+    stock_actual         numeric(12,3) NOT NULL DEFAULT 0,
+    stock_minimo         numeric(12,3) NOT NULL DEFAULT 0,
+    stock_maximo         numeric(12,3) NULL DEFAULT 0,
+    afecto_igv           varchar(1)    NOT NULL DEFAULT '1',
+    es_perecible         varchar(1)    NOT NULL DEFAULT '0',
+    imagen               varchar(200)  NULL,
+    f_creacion           timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre              varchar(30)   NULL,
+    pc_cre               varchar(30)   NULL,
+    fec_cre              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod              varchar(30)   NULL,
+    pc_mod               varchar(30)   NULL,
+    fec_mod              timestamp     NULL,
+    estado               varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_producto PRIMARY KEY (id_producto),
+    CONSTRAINT fk_producto_categoria_producto FOREIGN KEY (id_categoria_producto)
+        REFERENCES categoria_producto(id_categoria_producto),
+    CONSTRAINT fk_producto_marca     FOREIGN KEY (id_marca)
+        REFERENCES marca(id_marca),
+    CONSTRAINT ck_producto_precio CHECK (p_venta >= 0 AND p_compra >= 0)
 );
 
-CREATE TABLE PRESENTACION_PRODUCTO(
-    ID_PresentacionProducto serial        NOT NULL,
-    ID_Producto             integer       NOT NULL,
-    ID_UnidadMedida         integer       NOT NULL,
-    Factor_Conversion       numeric(12,3) NOT NULL DEFAULT 1,
-    Es_Unidad_Base          char(1)       NOT NULL DEFAULT '0',
-    USUCRE                  varchar(30)   NULL,
-    PCCRE                   varchar(30)   NULL,
-    FECCRE                  timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD                  varchar(30)   NULL,
-    PCMOD                   varchar(30)   NULL,
-    FECMOD                  timestamp     NULL,
-    ESTADO                  char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_PRESENTACION_PRODUCTO PRIMARY KEY (ID_PresentacionProducto),
-    CONSTRAINT UQ_PRESENTACION_PRODUCTO UNIQUE (ID_Producto, ID_UnidadMedida),
-    CONSTRAINT FK_PRESPRODUCTO_PRODUCTO FOREIGN KEY (ID_Producto)
-        REFERENCES PRODUCTO(ID_Producto),
-    CONSTRAINT FK_PRESPRODUCTO_UNIDAD FOREIGN KEY (ID_UnidadMedida)
-        REFERENCES UNIDAD_MEDIDA(ID_UnidadMedida),
-    CONSTRAINT CK_PRESPRODUCTO_FACTOR CHECK (Factor_Conversion > 0),
-    CONSTRAINT CK_PRESPRODUCTO_BASE CHECK (Es_Unidad_Base IN ('0','1'))
+CREATE TABLE presentacion_producto (
+    id_presentacion_producto bigserial   NOT NULL,
+    id_producto             bigint        NOT NULL,
+    id_unidad_medida        bigint        NOT NULL,
+    factor_conversion       numeric(12,3) NOT NULL DEFAULT 1,
+    es_unidad_base          varchar(1)    NOT NULL DEFAULT '0',
+    usu_cre                 varchar(30)   NULL,
+    pc_cre                  varchar(30)   NULL,
+    fec_cre                 timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod                 varchar(30)   NULL,
+    pc_mod                  varchar(30)   NULL,
+    fec_mod                 timestamp     NULL,
+    estado                  varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_presentacion_producto PRIMARY KEY (id_presentacion_producto),
+    CONSTRAINT uq_presentacion_producto UNIQUE (id_producto, id_unidad_medida),
+    CONSTRAINT fk_presentacion_producto_producto FOREIGN KEY (id_producto)
+        REFERENCES producto(id_producto),
+    CONSTRAINT fk_presentacion_producto_unidad_medida FOREIGN KEY (id_unidad_medida)
+        REFERENCES unidad_medida(id_unidad_medida),
+    CONSTRAINT ck_presentacion_producto_factor CHECK (factor_conversion > 0),
+    CONSTRAINT ck_presentacion_producto_base CHECK (es_unidad_base IN ('0','1'))
 );
 
-CREATE TABLE INVENTARIO(
-    ID_Inventario       serial        NOT NULL,
-    ID_Producto         integer       NOT NULL,
-    ID_Almacen          integer       NOT NULL,
-    Stock               numeric(12,3) NOT NULL DEFAULT 0,
-    Stock_Reservado     numeric(12,3) NOT NULL DEFAULT 0,
-    Ubicacion_Fisica    varchar(50)   NULL,
-    F_Actualizacion     timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_INVENTARIO PRIMARY KEY (ID_Inventario),
-    CONSTRAINT UQ_INVENTARIO UNIQUE (ID_Producto, ID_Almacen),
-    CONSTRAINT FK_INVENTARIO_PRODUCTO FOREIGN KEY (ID_Producto) REFERENCES PRODUCTO(ID_Producto),
-    CONSTRAINT FK_INVENTARIO_ALMACEN  FOREIGN KEY (ID_Almacen)  REFERENCES ALMACEN(ID_Almacen)
+CREATE TABLE inventario (
+    id_inventario       bigserial     NOT NULL,
+    id_producto         bigint        NOT NULL,
+    id_almacen          bigint        NOT NULL,
+    stock               numeric(12,3) NOT NULL DEFAULT 0,
+    stock_reservado     numeric(12,3) NOT NULL DEFAULT 0,
+    ubicacion_fisica    varchar(50)   NULL,
+    f_actualizacion     timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_inventario PRIMARY KEY (id_inventario),
+    CONSTRAINT uq_inventario UNIQUE (id_producto, id_almacen),
+    CONSTRAINT fk_inventario_producto FOREIGN KEY (id_producto) REFERENCES producto(id_producto),
+    CONSTRAINT fk_inventario_almacen  FOREIGN KEY (id_almacen)  REFERENCES almacen(id_almacen)
 );
 
-CREATE TABLE LOTE_PRODUCTO(
-    ID_Lote             serial        NOT NULL,
-    ID_Producto         integer       NOT NULL,
-    ID_Almacen          integer       NOT NULL,
-    N_Lote              varchar(30)   NULL,
-    F_Produccion        date          NULL,
-    F_Vencimiento       date          NULL,
-    Cantidad_Inicial    numeric(12,3) NOT NULL DEFAULT 0,
-    Cantidad_Actual     numeric(12,3) NOT NULL DEFAULT 0,
-    Costo_Unitario      numeric(10,2) NULL DEFAULT 0,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_LOTE_PRODUCTO PRIMARY KEY (ID_Lote),
-    CONSTRAINT FK_LOTE_PRODUCTO FOREIGN KEY (ID_Producto) REFERENCES PRODUCTO(ID_Producto),
-    CONSTRAINT FK_LOTE_ALMACEN  FOREIGN KEY (ID_Almacen)  REFERENCES ALMACEN(ID_Almacen)
+CREATE TABLE lote_producto (
+    id_lote             bigserial     NOT NULL,
+    id_producto         bigint        NOT NULL,
+    id_almacen          bigint        NOT NULL,
+    n_lote              varchar(30)   NULL,
+    f_produccion        date          NULL,
+    f_vencimiento       date          NULL,
+    cantidad_inicial    numeric(12,3) NOT NULL DEFAULT 0,
+    cantidad_actual     numeric(12,3) NOT NULL DEFAULT 0,
+    costo_unitario      numeric(10,2) NULL DEFAULT 0,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_lote_producto PRIMARY KEY (id_lote),
+    CONSTRAINT fk_lote_producto_producto FOREIGN KEY (id_producto) REFERENCES producto(id_producto),
+    CONSTRAINT fk_lote_producto_almacen  FOREIGN KEY (id_almacen)  REFERENCES almacen(id_almacen)
 );
 
-CREATE TABLE TIPO_MOVIMIENTO_INV(
-    ID_TipoMovimientoInv serial       NOT NULL,
-    N_TipoMovimiento     varchar(30)  NOT NULL,
-    Abreviatura          varchar(10)  NULL,
-    Signo                char(1)      NOT NULL,
-    F_Creacion           timestamp    NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE               varchar(30)  NULL,
-    PCCRE                varchar(30)  NULL,
-    FECCRE               timestamp    NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD               varchar(30)  NULL,
-    PCMOD                varchar(30)  NULL,
-    FECMOD               timestamp    NULL,
-    ESTADO               char(1)      NOT NULL DEFAULT '1',
-    CONSTRAINT PK_TIPO_MOVIMIENTO_INV PRIMARY KEY (ID_TipoMovimientoInv),
-    CONSTRAINT CK_TIPOMOVINV_SIGNO CHECK (Signo IN ('+','-'))
+CREATE TABLE tipo_movimiento_inv (
+    id_tipo_movimiento_inv bigserial  NOT NULL,
+    n_tipo_movimiento      varchar(30) NOT NULL,
+    abreviatura            varchar(10) NULL,
+    signo                  varchar(1)  NOT NULL,
+    f_creacion             timestamp   NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre                varchar(30) NULL,
+    pc_cre                 varchar(30) NULL,
+    fec_cre                timestamp   NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod                varchar(30) NULL,
+    pc_mod                 varchar(30) NULL,
+    fec_mod                timestamp   NULL,
+    estado                 varchar(1)  NOT NULL DEFAULT '1',
+    CONSTRAINT pk_tipo_movimiento_inv PRIMARY KEY (id_tipo_movimiento_inv),
+    CONSTRAINT ck_tipo_movimiento_inv_signo CHECK (signo IN ('+','-'))
 );
 
 /*==============================================================================
   6. METODO DE PAGO, CLIENTES Y PROVEEDORES
 ==============================================================================*/
-CREATE TABLE METODO_PAGO(
-    ID_MetodoPago       serial        NOT NULL,
-    N_MetodoPago        varchar(30)   NOT NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_METODO_PAGO PRIMARY KEY (ID_MetodoPago)
+CREATE TABLE metodo_pago (
+    id_metodo_pago      bigserial     NOT NULL,
+    n_metodo_pago       varchar(30)   NOT NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_metodo_pago PRIMARY KEY (id_metodo_pago)
 );
 
-CREATE TABLE CLIENTE(
-    ID_Cliente          serial        NOT NULL,
-    ID_Persona          integer       NULL,
-    ID_Empresa          integer       NULL,
-    Codigo_Cliente      varchar(20)   NULL,
-    Tipo_Cliente        char(1)       NOT NULL DEFAULT 'N',
-    Limite_Credito      numeric(12,2) NOT NULL DEFAULT 0,
-    Saldo_Deuda         numeric(12,2) NOT NULL DEFAULT 0,
-    Puntos              integer       NOT NULL DEFAULT 0,
-    F_Registro          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_CLIENTE PRIMARY KEY (ID_Cliente),
-    CONSTRAINT FK_CLIENTE_PERSONA FOREIGN KEY (ID_Persona) REFERENCES PERSONA(ID_Persona),
-    CONSTRAINT FK_CLIENTE_EMPRESA FOREIGN KEY (ID_Empresa) REFERENCES EMPRESA(ID_Empresa),
-    CONSTRAINT CK_CLIENTE_TIPO CHECK (Tipo_Cliente IN ('N','J'))
+CREATE TABLE cliente (
+    id_cliente          bigserial     NOT NULL,
+    id_persona          bigint        NULL,
+    id_empresa          bigint        NULL,
+    codigo_cliente      varchar(20)   NULL,
+    tipo_cliente        varchar(1)    NOT NULL DEFAULT 'N',
+    limite_credito      numeric(12,2) NOT NULL DEFAULT 0,
+    saldo_deuda         numeric(12,2) NOT NULL DEFAULT 0,
+    puntos              integer       NOT NULL DEFAULT 0,
+    f_registro          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_cliente PRIMARY KEY (id_cliente),
+    CONSTRAINT fk_cliente_persona FOREIGN KEY (id_persona) REFERENCES persona(id_persona),
+    CONSTRAINT fk_cliente_empresa FOREIGN KEY (id_empresa) REFERENCES empresa(id_empresa),
+    CONSTRAINT ck_cliente_tipo_cliente CHECK (tipo_cliente IN ('N','J'))
 );
 
-CREATE TABLE PROVEEDOR(
-    ID_Proveedor        serial        NOT NULL,
-    ID_Empresa          integer       NULL,
-    ID_Persona          integer       NULL,
-    Codigo_Proveedor    varchar(20)   NULL,
-    Contacto            varchar(80)   NULL,
-    Telefono_Contacto   varchar(15)   NULL,
-    Email_Contacto      varchar(50)   NULL,
-    Dias_Credito        integer       NOT NULL DEFAULT 0,
-    F_Registro          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_PROVEEDOR PRIMARY KEY (ID_Proveedor),
-    CONSTRAINT FK_PROVEEDOR_EMPRESA FOREIGN KEY (ID_Empresa) REFERENCES EMPRESA(ID_Empresa),
-    CONSTRAINT FK_PROVEEDOR_PERSONA FOREIGN KEY (ID_Persona) REFERENCES PERSONA(ID_Persona)
+CREATE TABLE proveedor (
+    id_proveedor        bigserial     NOT NULL,
+    id_empresa          bigint        NULL,
+    id_persona          bigint        NULL,
+    codigo_proveedor    varchar(20)   NULL,
+    contacto            varchar(80)   NULL,
+    telefono_contacto   varchar(15)   NULL,
+    email_contacto      varchar(50)   NULL,
+    dias_credito        integer       NOT NULL DEFAULT 0,
+    f_registro          timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_proveedor PRIMARY KEY (id_proveedor),
+    CONSTRAINT fk_proveedor_empresa FOREIGN KEY (id_empresa) REFERENCES empresa(id_empresa),
+    CONSTRAINT fk_proveedor_persona FOREIGN KEY (id_persona) REFERENCES persona(id_persona)
 );
 
 /*==============================================================================
   7. COMPRAS (ABASTECIMIENTO)
 ==============================================================================*/
-CREATE TABLE COMPRA(
-    ID_Compra           serial        NOT NULL,
-    ID_Proveedor        integer       NOT NULL,
-    ID_Usuario          integer       NOT NULL,
-    ID_Almacen          integer       NOT NULL,
-    ID_MetodoPago       integer       NULL,
-    TipoDocumento       char(11)      NULL,
-    Documento           varchar(50)   NULL,
-    F_Compra            timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    SubTotal            numeric(12,2) NOT NULL DEFAULT 0,
-    IGV                 numeric(12,2) NOT NULL DEFAULT 0,
-    Total               numeric(12,2) NOT NULL DEFAULT 0,
-    T_Pagado            numeric(12,2) NOT NULL DEFAULT 0,
-    Saldo               numeric(12,2) NOT NULL DEFAULT 0,
-    Es_Credito          char(1)       NOT NULL DEFAULT '0',
-    F_Vencimiento       date          NULL,
-    Situacion           char(1)       NOT NULL DEFAULT 'R',
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_COMPRA PRIMARY KEY (ID_Compra),
-    CONSTRAINT FK_COMPRA_PROVEEDOR FOREIGN KEY (ID_Proveedor)  REFERENCES PROVEEDOR(ID_Proveedor),
-    CONSTRAINT FK_COMPRA_USUARIO   FOREIGN KEY (ID_Usuario)    REFERENCES USUARIO(ID_Usuario),
-    CONSTRAINT FK_COMPRA_ALMACEN   FOREIGN KEY (ID_Almacen)    REFERENCES ALMACEN(ID_Almacen),
-    CONSTRAINT FK_COMPRA_METODOPAGO FOREIGN KEY (ID_MetodoPago) REFERENCES METODO_PAGO(ID_MetodoPago)
+CREATE TABLE compra (
+    id_compra           bigserial     NOT NULL,
+    id_proveedor        bigint        NOT NULL,
+    id_usuario          bigint        NOT NULL,
+    id_almacen          bigint        NOT NULL,
+    id_metodo_pago      bigint        NULL,
+    tipo_documento      varchar(11)   NULL,
+    documento           varchar(50)   NULL,
+    f_compra            timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    sub_total           numeric(12,2) NOT NULL DEFAULT 0,
+    igv                 numeric(12,2) NOT NULL DEFAULT 0,
+    total               numeric(12,2) NOT NULL DEFAULT 0,
+    t_pagado            numeric(12,2) NOT NULL DEFAULT 0,
+    saldo               numeric(12,2) NOT NULL DEFAULT 0,
+    es_credito          varchar(1)    NOT NULL DEFAULT '0',
+    f_vencimiento       date          NULL,
+    situacion           varchar(1)    NOT NULL DEFAULT 'R',
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_compra PRIMARY KEY (id_compra),
+    CONSTRAINT fk_compra_proveedor   FOREIGN KEY (id_proveedor)   REFERENCES proveedor(id_proveedor),
+    CONSTRAINT fk_compra_usuario     FOREIGN KEY (id_usuario)     REFERENCES usuario(id_usuario),
+    CONSTRAINT fk_compra_almacen     FOREIGN KEY (id_almacen)     REFERENCES almacen(id_almacen),
+    CONSTRAINT fk_compra_metodo_pago FOREIGN KEY (id_metodo_pago) REFERENCES metodo_pago(id_metodo_pago)
 );
 
-CREATE TABLE DETALLE_COMPRA(
-    ID_DetalleCompra    serial        NOT NULL,
-    ID_Compra           integer       NOT NULL,
-    ID_Producto         integer       NOT NULL,
-    ID_PresentacionProducto integer    NOT NULL,
-    ID_Lote             integer       NULL,
-    Cantidad            numeric(12,3) NOT NULL,
-    Costo_Unitario      numeric(10,2) NOT NULL,
-    Sub_Total           numeric(12,2) NOT NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_DETALLE_COMPRA PRIMARY KEY (ID_DetalleCompra),
-    CONSTRAINT FK_DETCOMPRA_COMPRA   FOREIGN KEY (ID_Compra)   REFERENCES COMPRA(ID_Compra),
-    CONSTRAINT FK_DETCOMPRA_PRODUCTO FOREIGN KEY (ID_Producto) REFERENCES PRODUCTO(ID_Producto),
-    CONSTRAINT FK_DETCOMPRA_PRESENTACION FOREIGN KEY (ID_PresentacionProducto)
-        REFERENCES PRESENTACION_PRODUCTO(ID_PresentacionProducto),
-    CONSTRAINT FK_DETCOMPRA_LOTE     FOREIGN KEY (ID_Lote)     REFERENCES LOTE_PRODUCTO(ID_Lote),
-    CONSTRAINT CK_DETCOMPRA_CANT CHECK (Cantidad > 0)
+CREATE TABLE detalle_compra (
+    id_detalle_compra   bigserial     NOT NULL,
+    id_compra           bigint        NOT NULL,
+    id_producto         bigint        NOT NULL,
+    id_presentacion_producto bigint   NOT NULL,
+    id_lote             bigint        NULL,
+    cantidad            numeric(12,3) NOT NULL,
+    costo_unitario      numeric(10,2) NOT NULL,
+    sub_total           numeric(12,2) NOT NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_detalle_compra PRIMARY KEY (id_detalle_compra),
+    CONSTRAINT fk_detalle_compra_compra  FOREIGN KEY (id_compra)  REFERENCES compra(id_compra),
+    CONSTRAINT fk_detalle_compra_producto FOREIGN KEY (id_producto) REFERENCES producto(id_producto),
+    CONSTRAINT fk_detalle_compra_presentacion_producto FOREIGN KEY (id_presentacion_producto)
+        REFERENCES presentacion_producto(id_presentacion_producto),
+    CONSTRAINT fk_detalle_compra_lote    FOREIGN KEY (id_lote)    REFERENCES lote_producto(id_lote),
+    CONSTRAINT ck_detalle_compra_cantidad CHECK (cantidad > 0)
 );
 
 /*==============================================================================
   8. VENTAS Y COMPROBANTES
 ==============================================================================*/
-CREATE TABLE VENTA(
-    ID_Venta            serial        NOT NULL,
-    ID_Cliente          integer       NOT NULL,
-    ID_Usuario          integer       NOT NULL,
-    ID_AperturaCaja     integer       NULL,
-    ID_MetodoPago       integer       NOT NULL,
-    F_Venta             timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    SubTotal            numeric(12,2) NOT NULL DEFAULT 0,
-    IGV                 numeric(12,2) NOT NULL DEFAULT 0,
-    Descuento           numeric(12,2) NOT NULL DEFAULT 0,
-    Total               numeric(12,2) NOT NULL DEFAULT 0,
-    T_Pagado            numeric(12,2) NOT NULL DEFAULT 0,
-    Vuelto              numeric(12,2) NOT NULL DEFAULT 0,
-    Es_Credito          char(1)       NOT NULL DEFAULT '0',
-    Saldo               numeric(12,2) NOT NULL DEFAULT 0,
-    TipoDocumento       char(11)      NOT NULL DEFAULT 'TICKET',
-    Situacion           char(1)       NOT NULL DEFAULT 'R',
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_VENTA PRIMARY KEY (ID_Venta),
-    CONSTRAINT FK_VENTA_CLIENTE     FOREIGN KEY (ID_Cliente)      REFERENCES CLIENTE(ID_Cliente),
-    CONSTRAINT FK_VENTA_USUARIO     FOREIGN KEY (ID_Usuario)      REFERENCES USUARIO(ID_Usuario),
-    CONSTRAINT FK_VENTA_APERTURA    FOREIGN KEY (ID_AperturaCaja) REFERENCES APERTURA_CAJA(ID_AperturaCaja),
-    CONSTRAINT FK_VENTA_METODOPAGO  FOREIGN KEY (ID_MetodoPago)   REFERENCES METODO_PAGO(ID_MetodoPago)
+CREATE TABLE venta (
+    id_venta            bigserial     NOT NULL,
+    id_cliente          bigint        NOT NULL,
+    id_usuario          bigint        NOT NULL,
+    id_apertura_caja    bigint        NULL,
+    id_metodo_pago      bigint        NOT NULL,
+    f_venta             timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    sub_total           numeric(12,2) NOT NULL DEFAULT 0,
+    igv                 numeric(12,2) NOT NULL DEFAULT 0,
+    descuento           numeric(12,2) NOT NULL DEFAULT 0,
+    total               numeric(12,2) NOT NULL DEFAULT 0,
+    t_pagado            numeric(12,2) NOT NULL DEFAULT 0,
+    vuelto              numeric(12,2) NOT NULL DEFAULT 0,
+    es_credito          varchar(1)    NOT NULL DEFAULT '0',
+    saldo               numeric(12,2) NOT NULL DEFAULT 0,
+    tipo_documento      varchar(11)   NOT NULL DEFAULT 'TICKET',
+    situacion           varchar(1)    NOT NULL DEFAULT 'R',
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_venta PRIMARY KEY (id_venta),
+    CONSTRAINT fk_venta_cliente        FOREIGN KEY (id_cliente)       REFERENCES cliente(id_cliente),
+    CONSTRAINT fk_venta_usuario        FOREIGN KEY (id_usuario)       REFERENCES usuario(id_usuario),
+    CONSTRAINT fk_venta_apertura_caja  FOREIGN KEY (id_apertura_caja) REFERENCES apertura_caja(id_apertura_caja),
+    CONSTRAINT fk_venta_metodo_pago    FOREIGN KEY (id_metodo_pago)   REFERENCES metodo_pago(id_metodo_pago)
 );
 
-CREATE TABLE DETALLE_VENTA(
-    ID_Detalle          serial        NOT NULL,
-    ID_Venta            integer       NOT NULL,
-    ID_Producto         integer       NOT NULL,
-    ID_PresentacionProducto integer    NOT NULL,
-    Cantidad            numeric(12,3) NOT NULL,
-    Precio_Unitario     numeric(10,2) NOT NULL,
-    Descuento           numeric(10,2) NOT NULL DEFAULT 0,
-    Sub_Total           numeric(12,2) NOT NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_DETALLE_VENTA PRIMARY KEY (ID_Detalle),
-    CONSTRAINT FK_DETVENTA_VENTA    FOREIGN KEY (ID_Venta)    REFERENCES VENTA(ID_Venta),
-    CONSTRAINT FK_DETVENTA_PRODUCTO FOREIGN KEY (ID_Producto) REFERENCES PRODUCTO(ID_Producto),
-    CONSTRAINT FK_DETVENTA_PRESENTACION FOREIGN KEY (ID_PresentacionProducto)
-        REFERENCES PRESENTACION_PRODUCTO(ID_PresentacionProducto),
-    CONSTRAINT CK_DETVENTA_CANT CHECK (Cantidad > 0)
+CREATE TABLE detalle_venta (
+    id_detalle          bigserial     NOT NULL,
+    id_venta            bigint        NOT NULL,
+    id_producto         bigint        NOT NULL,
+    id_presentacion_producto bigint   NOT NULL,
+    cantidad            numeric(12,3) NOT NULL,
+    precio_unitario     numeric(10,2) NOT NULL,
+    descuento           numeric(10,2) NOT NULL DEFAULT 0,
+    sub_total           numeric(12,2) NOT NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_detalle_venta PRIMARY KEY (id_detalle),
+    CONSTRAINT fk_detalle_venta_venta  FOREIGN KEY (id_venta)  REFERENCES venta(id_venta),
+    CONSTRAINT fk_detalle_venta_producto FOREIGN KEY (id_producto) REFERENCES producto(id_producto),
+    CONSTRAINT fk_detalle_venta_presentacion_producto FOREIGN KEY (id_presentacion_producto)
+        REFERENCES presentacion_producto(id_presentacion_producto),
+    CONSTRAINT ck_detalle_venta_cantidad CHECK (cantidad > 0)
 );
 
-CREATE TABLE BOLETA(
-    ID_Boleta           serial        NOT NULL,
-    ID_Venta            integer       NOT NULL,
-    F_Emision           timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    Numero              char(8)       NOT NULL,
-    Serie               char(5)       NOT NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_BOLETA PRIMARY KEY (ID_Boleta),
-    CONSTRAINT UQ_BOLETA_SERIE_NUM UNIQUE (Serie, Numero),
-    CONSTRAINT FK_BOLETA_VENTA FOREIGN KEY (ID_Venta) REFERENCES VENTA(ID_Venta)
+CREATE TABLE boleta (
+    id_boleta           bigserial     NOT NULL,
+    id_venta            bigint        NOT NULL,
+    f_emision           timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    numero              varchar(8)    NOT NULL,
+    serie               varchar(5)    NOT NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_boleta PRIMARY KEY (id_boleta),
+    CONSTRAINT uq_boleta_serie_numero UNIQUE (serie, numero),
+    CONSTRAINT fk_boleta_venta FOREIGN KEY (id_venta) REFERENCES venta(id_venta)
 );
 
-CREATE TABLE FACTURA(
-    ID_Factura          serial        NOT NULL,
-    ID_Venta            integer       NOT NULL,
-    F_Emision           timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    Numero              char(8)       NOT NULL,
-    Serie               char(5)       NOT NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_FACTURA PRIMARY KEY (ID_Factura),
-    CONSTRAINT UQ_FACTURA_SERIE_NUM UNIQUE (Serie, Numero),
-    CONSTRAINT FK_FACTURA_VENTA FOREIGN KEY (ID_Venta) REFERENCES VENTA(ID_Venta)
+CREATE TABLE factura (
+    id_factura          bigserial     NOT NULL,
+    id_venta            bigint        NOT NULL,
+    f_emision           timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    numero              varchar(8)    NOT NULL,
+    serie               varchar(5)    NOT NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_factura PRIMARY KEY (id_factura),
+    CONSTRAINT uq_factura_serie_numero UNIQUE (serie, numero),
+    CONSTRAINT fk_factura_venta FOREIGN KEY (id_venta) REFERENCES venta(id_venta)
 );
 
 /*==============================================================================
   9. CREDITOS / CUENTAS POR COBRAR
 ==============================================================================*/
-CREATE TABLE CUENTA_COBRAR(
-    ID_Cuenta           serial        NOT NULL,
-    ID_Venta            integer       NOT NULL,
-    ID_Cliente          integer       NOT NULL,
-    Monto_Total         numeric(12,2) NOT NULL,
-    Saldo               numeric(12,2) NOT NULL,
-    F_Emision           timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    F_Vencimiento       date          NULL,
-    Situacion           char(1)       NOT NULL DEFAULT 'P',
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_CUENTA_COBRAR PRIMARY KEY (ID_Cuenta),
-    CONSTRAINT FK_CUENTA_VENTA   FOREIGN KEY (ID_Venta)   REFERENCES VENTA(ID_Venta),
-    CONSTRAINT FK_CUENTA_CLIENTE FOREIGN KEY (ID_Cliente) REFERENCES CLIENTE(ID_Cliente)
+CREATE TABLE cuenta_cobrar (
+    id_cuenta           bigserial     NOT NULL,
+    id_venta            bigint        NOT NULL,
+    id_cliente          bigint        NOT NULL,
+    monto_total         numeric(12,2) NOT NULL,
+    saldo               numeric(12,2) NOT NULL,
+    f_emision           timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    f_vencimiento       date          NULL,
+    situacion           varchar(1)    NOT NULL DEFAULT 'P',
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_cuenta_cobrar PRIMARY KEY (id_cuenta),
+    CONSTRAINT fk_cuenta_cobrar_venta   FOREIGN KEY (id_venta)   REFERENCES venta(id_venta),
+    CONSTRAINT fk_cuenta_cobrar_cliente FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente)
 );
 
-CREATE TABLE PAGO_CUENTA(
-    ID_PagoCuenta       serial        NOT NULL,
-    ID_Cuenta           integer       NOT NULL,
-    ID_MetodoPago       integer       NOT NULL,
-    ID_Usuario          integer       NOT NULL,
-    ID_AperturaCaja     integer       NULL,
-    Monto               numeric(12,2) NOT NULL,
-    F_Pago              timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    Documento           varchar(50)   NULL,
-    Observacion         varchar(200)  NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_PAGO_CUENTA PRIMARY KEY (ID_PagoCuenta),
-    CONSTRAINT FK_PAGOCTA_CUENTA     FOREIGN KEY (ID_Cuenta)       REFERENCES CUENTA_COBRAR(ID_Cuenta),
-    CONSTRAINT FK_PAGOCTA_METODOPAGO FOREIGN KEY (ID_MetodoPago)   REFERENCES METODO_PAGO(ID_MetodoPago),
-    CONSTRAINT FK_PAGOCTA_USUARIO    FOREIGN KEY (ID_Usuario)      REFERENCES USUARIO(ID_Usuario),
-    CONSTRAINT FK_PAGOCTA_APERTURA   FOREIGN KEY (ID_AperturaCaja) REFERENCES APERTURA_CAJA(ID_AperturaCaja),
-    CONSTRAINT CK_PAGOCTA_MONTO CHECK (Monto > 0)
+CREATE TABLE pago_cuenta (
+    id_pago_cuenta      bigserial     NOT NULL,
+    id_cuenta           bigint        NOT NULL,
+    id_metodo_pago      bigint        NOT NULL,
+    id_usuario          bigint        NOT NULL,
+    id_apertura_caja    bigint        NULL,
+    monto               numeric(12,2) NOT NULL,
+    f_pago              timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    documento           varchar(50)   NULL,
+    observacion         varchar(200)  NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_pago_cuenta PRIMARY KEY (id_pago_cuenta),
+    CONSTRAINT fk_pago_cuenta_cuenta       FOREIGN KEY (id_cuenta)       REFERENCES cuenta_cobrar(id_cuenta),
+    CONSTRAINT fk_pago_cuenta_metodo_pago  FOREIGN KEY (id_metodo_pago)  REFERENCES metodo_pago(id_metodo_pago),
+    CONSTRAINT fk_pago_cuenta_usuario      FOREIGN KEY (id_usuario)      REFERENCES usuario(id_usuario),
+    CONSTRAINT fk_pago_cuenta_apertura_caja FOREIGN KEY (id_apertura_caja) REFERENCES apertura_caja(id_apertura_caja),
+    CONSTRAINT ck_pago_cuenta_monto CHECK (monto > 0)
 );
 
 /*==============================================================================
   10. KARDEX / MOVIMIENTO DE INVENTARIO
 ==============================================================================*/
-CREATE TABLE MOVIMIENTO_INVENTARIO(
-    ID_MovimientoInv     serial        NOT NULL,
-    ID_Producto          integer       NOT NULL,
-    ID_Almacen           integer       NOT NULL,
-    ID_TipoMovimientoInv integer       NOT NULL,
-    ID_Lote              integer       NULL,
-    ID_Usuario           integer       NOT NULL,
-    ID_Venta             integer       NULL,
-    ID_Compra            integer       NULL,
-    Cantidad             numeric(12,3) NOT NULL,
-    Costo_Unitario       numeric(10,2) NULL DEFAULT 0,
-    Stock_Anterior       numeric(12,3) NOT NULL DEFAULT 0,
-    Stock_Nuevo          numeric(12,3) NOT NULL DEFAULT 0,
-    F_Movimiento         timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    Documento            varchar(30)   NULL,
-    Observacion          varchar(200)  NULL,
-    IP                   varchar(20)   NULL,
-    Terminal             varchar(30)   NULL,
-    USUCRE               varchar(30)   NULL,
-    PCCRE                varchar(30)   NULL,
-    FECCRE               timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD               varchar(30)   NULL,
-    PCMOD                varchar(30)   NULL,
-    FECMOD               timestamp     NULL,
-    ESTADO               char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_MOVIMIENTO_INVENTARIO PRIMARY KEY (ID_MovimientoInv),
-    CONSTRAINT FK_MOVINV_PRODUCTO FOREIGN KEY (ID_Producto)          REFERENCES PRODUCTO(ID_Producto),
-    CONSTRAINT FK_MOVINV_ALMACEN  FOREIGN KEY (ID_Almacen)           REFERENCES ALMACEN(ID_Almacen),
-    CONSTRAINT FK_MOVINV_TIPO     FOREIGN KEY (ID_TipoMovimientoInv) REFERENCES TIPO_MOVIMIENTO_INV(ID_TipoMovimientoInv),
-    CONSTRAINT FK_MOVINV_LOTE     FOREIGN KEY (ID_Lote)              REFERENCES LOTE_PRODUCTO(ID_Lote),
-    CONSTRAINT FK_MOVINV_USUARIO  FOREIGN KEY (ID_Usuario)           REFERENCES USUARIO(ID_Usuario),
-    CONSTRAINT FK_MOVINV_VENTA    FOREIGN KEY (ID_Venta)             REFERENCES VENTA(ID_Venta),
-    CONSTRAINT FK_MOVINV_COMPRA   FOREIGN KEY (ID_Compra)            REFERENCES COMPRA(ID_Compra)
+CREATE TABLE movimiento_inventario (
+    id_movimiento_inv   bigserial     NOT NULL,
+    id_producto         bigint        NOT NULL,
+    id_almacen          bigint        NOT NULL,
+    id_tipo_movimiento_inv bigint     NOT NULL,
+    id_lote             bigint        NULL,
+    id_usuario          bigint        NOT NULL,
+    id_venta            bigint        NULL,
+    id_compra           bigint        NULL,
+    cantidad            numeric(12,3) NOT NULL,
+    costo_unitario      numeric(10,2) NULL DEFAULT 0,
+    stock_anterior      numeric(12,3) NOT NULL DEFAULT 0,
+    stock_nuevo         numeric(12,3) NOT NULL DEFAULT 0,
+    f_movimiento        timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    documento           varchar(30)   NULL,
+    observacion         varchar(200)  NULL,
+    ip                  varchar(20)   NULL,
+    terminal            varchar(30)   NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_movimiento_inventario PRIMARY KEY (id_movimiento_inv),
+    CONSTRAINT fk_movimiento_inventario_producto  FOREIGN KEY (id_producto)  REFERENCES producto(id_producto),
+    CONSTRAINT fk_movimiento_inventario_almacen   FOREIGN KEY (id_almacen)   REFERENCES almacen(id_almacen),
+    CONSTRAINT fk_movimiento_inventario_tipo_movimiento_inv FOREIGN KEY (id_tipo_movimiento_inv)
+        REFERENCES tipo_movimiento_inv(id_tipo_movimiento_inv),
+    CONSTRAINT fk_movimiento_inventario_lote      FOREIGN KEY (id_lote)      REFERENCES lote_producto(id_lote),
+    CONSTRAINT fk_movimiento_inventario_usuario   FOREIGN KEY (id_usuario)   REFERENCES usuario(id_usuario),
+    CONSTRAINT fk_movimiento_inventario_venta     FOREIGN KEY (id_venta)     REFERENCES venta(id_venta),
+    CONSTRAINT fk_movimiento_inventario_compra    FOREIGN KEY (id_compra)    REFERENCES compra(id_compra)
 );
 
 /*==============================================================================
   11. MOVIMIENTO_CAJA
 ==============================================================================*/
-CREATE TABLE MOVIMIENTO_CAJA(
-    ID_MovimientoCaja   serial        NOT NULL,
-    ID_AperturaCaja     integer       NOT NULL,
-    ID_TipoMovimiento   integer       NOT NULL,
-    ID_Concepto         integer       NOT NULL,
-    ID_MetodoPago       integer       NOT NULL,
-    ID_Usuario          integer       NOT NULL,
-    ID_Compra           integer       NULL,
-    ID_Venta            integer       NULL,
-    Numero_Operacion    varchar(30)   NULL,
-    Documento           varchar(50)   NULL,
-    Descripcion         varchar(200)  NULL,
-    Monto               numeric(12,2) NOT NULL,
-    Afecta_Efectivo     char(1)       NOT NULL DEFAULT '1',
-    F_Movimiento        timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    IP                  varchar(20)   NULL,
-    Terminal            varchar(30)   NULL,
-    USUCRE              varchar(30)   NULL,
-    PCCRE               varchar(30)   NULL,
-    FECCRE              timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
-    USUMOD              varchar(30)   NULL,
-    PCMOD               varchar(30)   NULL,
-    FECMOD              timestamp     NULL,
-    ESTADO              char(1)       NOT NULL DEFAULT '1',
-    CONSTRAINT PK_MOVIMIENTO_CAJA PRIMARY KEY (ID_MovimientoCaja),
-    CONSTRAINT FK_MOVCAJA_APERTURA   FOREIGN KEY (ID_AperturaCaja)   REFERENCES APERTURA_CAJA(ID_AperturaCaja),
-    CONSTRAINT FK_MOVCAJA_TIPO       FOREIGN KEY (ID_TipoMovimiento) REFERENCES TIPO_MOVIMIENTO_CAJA(ID_TipoMovimiento),
-    CONSTRAINT FK_MOVCAJA_CONCEPTO   FOREIGN KEY (ID_Concepto)       REFERENCES CONCEPTO_CAJA(ID_Concepto),
-    CONSTRAINT FK_MOVCAJA_METODOPAGO FOREIGN KEY (ID_MetodoPago)     REFERENCES METODO_PAGO(ID_MetodoPago),
-    CONSTRAINT FK_MOVCAJA_USUARIO    FOREIGN KEY (ID_Usuario)        REFERENCES USUARIO(ID_Usuario),
-    CONSTRAINT FK_MOVCAJA_COMPRA     FOREIGN KEY (ID_Compra)         REFERENCES COMPRA(ID_Compra),
-    CONSTRAINT FK_MOVCAJA_VENTA      FOREIGN KEY (ID_Venta)          REFERENCES VENTA(ID_Venta)
+CREATE TABLE movimiento_caja (
+    id_movimiento_caja  bigserial     NOT NULL,
+    id_apertura_caja    bigint        NOT NULL,
+    id_tipo_movimiento  bigint        NOT NULL,
+    id_concepto         bigint        NOT NULL,
+    id_metodo_pago      bigint        NOT NULL,
+    id_usuario          bigint        NOT NULL,
+    id_compra           bigint        NULL,
+    id_venta            bigint        NULL,
+    numero_operacion    varchar(30)   NULL,
+    documento           varchar(50)   NULL,
+    descripcion         varchar(200)  NULL,
+    monto               numeric(12,2) NOT NULL,
+    afecta_efectivo     varchar(1)    NOT NULL DEFAULT '1',
+    f_movimiento        timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ip                  varchar(20)   NULL,
+    terminal            varchar(30)   NULL,
+    usu_cre             varchar(30)   NULL,
+    pc_cre              varchar(30)   NULL,
+    fec_cre             timestamp     NULL DEFAULT CURRENT_TIMESTAMP,
+    usu_mod             varchar(30)   NULL,
+    pc_mod              varchar(30)   NULL,
+    fec_mod             timestamp     NULL,
+    estado              varchar(1)    NOT NULL DEFAULT '1',
+    CONSTRAINT pk_movimiento_caja PRIMARY KEY (id_movimiento_caja),
+    CONSTRAINT fk_movimiento_caja_apertura_caja  FOREIGN KEY (id_apertura_caja)  REFERENCES apertura_caja(id_apertura_caja),
+    CONSTRAINT fk_movimiento_caja_tipo_movimiento FOREIGN KEY (id_tipo_movimiento) REFERENCES tipo_movimiento_caja(id_tipo_movimiento),
+    CONSTRAINT fk_movimiento_caja_concepto       FOREIGN KEY (id_concepto)        REFERENCES concepto_caja(id_concepto),
+    CONSTRAINT fk_movimiento_caja_metodo_pago    FOREIGN KEY (id_metodo_pago)     REFERENCES metodo_pago(id_metodo_pago),
+    CONSTRAINT fk_movimiento_caja_usuario        FOREIGN KEY (id_usuario)         REFERENCES usuario(id_usuario),
+    CONSTRAINT fk_movimiento_caja_compra         FOREIGN KEY (id_compra)          REFERENCES compra(id_compra),
+    CONSTRAINT fk_movimiento_caja_venta          FOREIGN KEY (id_venta)           REFERENCES venta(id_venta)
 );
 
 /*==============================================================================
   12. INDICES DE RENDIMIENTO
 ==============================================================================*/
-CREATE UNIQUE INDEX UX_PERSONA_DOCUMENTO   ON PERSONA(N_Documento);
-CREATE INDEX IX_PERSONA_APELLIDOS          ON PERSONA(Ap_Paterno, Ap_Materno, Nombre);
-CREATE UNIQUE INDEX UX_EMPRESA_RUC         ON EMPRESA(RUC);
-CREATE UNIQUE INDEX UX_PRODUCTO_BARRAS     ON PRODUCTO(Codigo_Barras) WHERE Codigo_Barras IS NOT NULL;
-CREATE INDEX IX_PRODUCTO_NOMBRE            ON PRODUCTO(N_Producto);
-CREATE INDEX IX_PRODUCTO_CATEGORIA         ON PRODUCTO(ID_CategoriaProducto);
-CREATE INDEX IX_PRODUCTO_STOCK             ON PRODUCTO(Stock_Actual, Stock_Minimo);
-CREATE UNIQUE INDEX UX_PRESENTACION_PRODUCTO_BASE
-    ON PRESENTACION_PRODUCTO(ID_Producto)
-    WHERE Es_Unidad_Base = '1' AND ESTADO = '1';
-CREATE INDEX IX_LOTE_VENCIMIENTO           ON LOTE_PRODUCTO(F_Vencimiento);
-CREATE INDEX IX_VENTA_FECHA                ON VENTA(F_Venta);
-CREATE INDEX IX_VENTA_CLIENTE              ON VENTA(ID_Cliente, F_Venta);
-CREATE INDEX IX_VENTA_APERTURA             ON VENTA(ID_AperturaCaja);
-CREATE INDEX IX_DETVENTA_VENTA             ON DETALLE_VENTA(ID_Venta);
-CREATE INDEX IX_DETVENTA_PRODUCTO          ON DETALLE_VENTA(ID_Producto);
-CREATE INDEX IX_COMPRA_FECHA               ON COMPRA(F_Compra);
-CREATE INDEX IX_DETCOMPRA_COMPRA           ON DETALLE_COMPRA(ID_Compra);
-CREATE INDEX IX_MOVINV_PRODUCTO_FECHA      ON MOVIMIENTO_INVENTARIO(ID_Producto, F_Movimiento);
-CREATE INDEX IX_MOVCAJA_APERTURA           ON MOVIMIENTO_CAJA(ID_AperturaCaja);
-CREATE INDEX IX_MOVCAJA_FECHA              ON MOVIMIENTO_CAJA(F_Movimiento);
-CREATE INDEX IX_CUENTA_CLIENTE             ON CUENTA_COBRAR(ID_Cliente, Situacion);
-CREATE INDEX IX_AUDITORIA_TABLA_FECHA      ON AUDITORIA(N_Tabla, F_Evento);
+CREATE UNIQUE INDEX ux_persona_documento   ON persona(n_documento);
+CREATE INDEX ix_persona_apellidos          ON persona(ap_paterno, ap_materno, nombre);
+CREATE UNIQUE INDEX ux_empresa_ruc         ON empresa(ruc);
+CREATE UNIQUE INDEX ux_producto_barras     ON producto(codigo_barras) WHERE codigo_barras IS NOT NULL;
+CREATE INDEX ix_producto_nombre            ON producto(n_producto);
+CREATE INDEX ix_producto_categoria         ON producto(id_categoria_producto);
+CREATE INDEX ix_producto_stock             ON producto(stock_actual, stock_minimo);
+CREATE UNIQUE INDEX ux_presentacion_producto_base
+    ON presentacion_producto(id_producto)
+    WHERE es_unidad_base = '1' AND estado = '1';
+CREATE INDEX ix_lote_producto_vencimiento  ON lote_producto(f_vencimiento);
+CREATE INDEX ix_venta_fecha                ON venta(f_venta);
+CREATE INDEX ix_venta_cliente              ON venta(id_cliente, f_venta);
+CREATE INDEX ix_venta_apertura_caja        ON venta(id_apertura_caja);
+CREATE INDEX ix_detalle_venta_venta        ON detalle_venta(id_venta);
+CREATE INDEX ix_detalle_venta_producto     ON detalle_venta(id_producto);
+CREATE INDEX ix_compra_fecha               ON compra(f_compra);
+CREATE INDEX ix_detalle_compra_compra      ON detalle_compra(id_compra);
+CREATE INDEX ix_movimiento_inventario_producto_fecha ON movimiento_inventario(id_producto, f_movimiento);
+CREATE INDEX ix_movimiento_caja_apertura_caja        ON movimiento_caja(id_apertura_caja);
+CREATE INDEX ix_movimiento_caja_fecha                 ON movimiento_caja(f_movimiento);
+CREATE INDEX ix_cuenta_cobrar_cliente      ON cuenta_cobrar(id_cliente, situacion);
+CREATE INDEX ix_auditoria_tabla_fecha      ON auditoria(n_tabla, f_evento);
 
 /*==============================================================================
   13. DATOS MAESTROS
 ==============================================================================*/
-INSERT INTO DEPARTAMENTO(N_Departamento, USUCRE) VALUES ('ICA','ADMIN'),('LIMA','ADMIN');
-INSERT INTO PROVINCIA(ID_Departamento, N_Provincia, USUCRE) VALUES (1,'ICA','ADMIN'),(1,'CHINCHA','ADMIN'),(2,'LIMA','ADMIN');
-INSERT INTO DISTRITO(ID_Provincia, D_Distrito, USUCRE) VALUES (1,'ICA','ADMIN'),(1,'PARCONA','ADMIN'),(1,'LA TINGUINA','ADMIN'),(1,'SUBTANJALLA','ADMIN'),(2,'PUEBLO NUEVO','ADMIN');
+INSERT INTO departamento(n_departamento, usu_cre) VALUES ('ICA','ADMIN'),('LIMA','ADMIN');
+INSERT INTO provincia(id_departamento, n_provincia, usu_cre) VALUES (1,'ICA','ADMIN'),(1,'CHINCHA','ADMIN'),(2,'LIMA','ADMIN');
+INSERT INTO distrito(id_provincia, d_distrito, usu_cre) VALUES (1,'ICA','ADMIN'),(1,'PARCONA','ADMIN'),(1,'LA TINGUINA','ADMIN'),(1,'SUBTANJALLA','ADMIN'),(2,'PUEBLO NUEVO','ADMIN');
 
-INSERT INTO TIPO_IDENTIDAD(N_TipoIdentidad, Abreviatura, Longitud, USUCRE) VALUES
+INSERT INTO tipo_identidad(n_tipo_identidad, abreviatura, longitud, usu_cre) VALUES
 ('DNI','DNI',8,'ADMIN'),('RUC','RUC',11,'ADMIN'),('CARNET EXTRANJERIA','CE',12,'ADMIN'),('PASAPORTE','PAS',12,'ADMIN');
-INSERT INTO CARGO(N_Cargo, USUCRE) VALUES ('ADMINISTRADOR','ADMIN'),('CAJERO','ADMIN'),('ALMACENERO','ADMIN'),('VENDEDOR','ADMIN');
-INSERT INTO CONTRATO(N_Contrato, USUCRE) VALUES ('PLAZO INDETERMINADO','ADMIN'),('PLAZO FIJO','ADMIN'),('RECIBO POR HONORARIOS','ADMIN');
+INSERT INTO cargo(n_cargo, usu_cre) VALUES ('ADMINISTRADOR','ADMIN'),('CAJERO','ADMIN'),('ALMACENERO','ADMIN'),('VENDEDOR','ADMIN');
+INSERT INTO contrato(n_contrato, usu_cre) VALUES ('PLAZO INDETERMINADO','ADMIN'),('PLAZO FIJO','ADMIN'),('RECIBO POR HONORARIOS','ADMIN');
 
-INSERT INTO METODO_PAGO(N_MetodoPago, USUCRE) VALUES
+INSERT INTO metodo_pago(n_metodo_pago, usu_cre) VALUES
  ('EFECTIVO','ADMIN'),('YAPE','ADMIN'),('PLIN','ADMIN'),('TARJETA DEBITO','ADMIN'),
  ('TARJETA CREDITO','ADMIN'),('TRANSFERENCIA','ADMIN'),('CREDITO / FIADO','ADMIN');
 
-INSERT INTO UNIDAD_MEDIDA(N_UnidadMedida, Abreviatura, USUCRE) VALUES
+INSERT INTO unidad_medida(n_unidad_medida, abreviatura, usu_cre) VALUES
  ('UNIDAD','UND','ADMIN'),('KILOGRAMO','KG','ADMIN'),('GRAMO','GR','ADMIN'),
  ('LITRO','LT','ADMIN'),('MILILITRO','ML','ADMIN'),('PAQUETE','PQT','ADMIN'),
  ('CAJA','CJA','ADMIN'),('DOCENA','DOC','ADMIN'),('BOTELLA','BOT','ADMIN'),('SACO','SCO','ADMIN');
 
-INSERT INTO MARCA(N_Marca, USUCRE) VALUES
+INSERT INTO marca(n_marca, usu_cre) VALUES
  ('GLORIA','ADMIN'),('ALICORP','ADMIN'),('BACKUS','ADMIN'),('COCA COLA','ADMIN'),
  ('NESTLE','ADMIN'),('P&G','ADMIN'),('SIN MARCA','ADMIN');
 
-INSERT INTO CATEGORIA_PRODUCTO(N_CategoriaProducto, Descripcion, USUCRE) VALUES
+INSERT INTO categoria_producto(n_categoria_producto, descripcion, usu_cre) VALUES
  ('ABARROTES','Arroz, azucar, fideos, aceite','ADMIN'),
  ('BEBIDAS','Gaseosas, aguas, jugos','ADMIN'),
  ('LACTEOS','Leche, yogurt, queso','ADMIN'),
@@ -980,13 +996,13 @@ INSERT INTO CATEGORIA_PRODUCTO(N_CategoriaProducto, Descripcion, USUCRE) VALUES
  ('ASEO PERSONAL','Shampoo, papel higienico','ADMIN'),
  ('SNACKS','Galletas, golosinas','ADMIN'),
  ('LICORES','Cerveza, vinos, piscos','ADMIN'),
- ('EMBUTIDOS','Jamonada, hot dog','ADMIN');
+ ('EMBUTIDOS','Jamones, hot dog','ADMIN');
 
-INSERT INTO ALMACEN(N_Almacen, Descripcion, Ubicacion, Es_Principal, USUCRE) VALUES
+INSERT INTO almacen(n_almacen, descripcion, ubicacion, es_principal, usu_cre) VALUES
  ('TIENDA','Stock en exhibicion / mostrador','Local principal','1','ADMIN'),
  ('DEPOSITO','Stock de reserva','Trastienda','0','ADMIN');
 
-INSERT INTO TIPO_MOVIMIENTO_INV(N_TipoMovimiento, Abreviatura, Signo, USUCRE) VALUES
+INSERT INTO tipo_movimiento_inv(n_tipo_movimiento, abreviatura, signo, usu_cre) VALUES
  ('ENTRADA POR COMPRA','ENT-C','+','ADMIN'),
  ('SALIDA POR VENTA','SAL-V','-','ADMIN'),
  ('AJUSTE POSITIVO','AJU+','+','ADMIN'),
@@ -998,10 +1014,10 @@ INSERT INTO TIPO_MOVIMIENTO_INV(N_TipoMovimiento, Abreviatura, Signo, USUCRE) VA
  ('TRANSFERENCIA SALIDA','TRA-','-','ADMIN'),
  ('INVENTARIO INICIAL','INI','+','ADMIN');
 
-INSERT INTO TIPO_MOVIMIENTO_CAJA(N_TipoMovimiento, Abreviatura, Signo, USUCRE) VALUES
+INSERT INTO tipo_movimiento_caja(n_tipo_movimiento, abreviatura, signo, usu_cre) VALUES
  ('INGRESO','ING','+','ADMIN'),('EGRESO','EGR','-','ADMIN');
 
-INSERT INTO CONCEPTO_CAJA(ID_TipoMovimiento, N_Concepto, Descripcion, Afecta_Efectivo, USUCRE) VALUES
+INSERT INTO concepto_caja(id_tipo_movimiento, n_concepto, descripcion, afecta_efectivo, usu_cre) VALUES
  (1,'VENTA AL CONTADO','Cobro por venta de productos','1','ADMIN'),
  (1,'COBRO DE FIADO','Cobro de cuenta por cobrar','1','ADMIN'),
  (1,'MONTO INICIAL','Fondo fijo de apertura','1','ADMIN'),
@@ -1012,9 +1028,9 @@ INSERT INTO CONCEPTO_CAJA(ID_TipoMovimiento, N_Concepto, Descripcion, Afecta_Efe
  (2,'SERVICIOS','Luz, agua, internet','1','ADMIN'),
  (2,'DEVOLUCION A CLIENTE','Devolucion de dinero','1','ADMIN');
 
-INSERT INTO TIPO_USUARIO(N_TipoUsuario, USUCRE) VALUES ('ADMINISTRADOR','ADMIN'),('CAJERO','ADMIN'),('ALMACENERO','ADMIN');
+INSERT INTO tipo_usuario(n_tipo_usuario, usu_cre) VALUES ('ADMINISTRADOR','ADMIN'),('CAJERO','ADMIN'),('ALMACENERO','ADMIN');
 
-INSERT INTO MODULO(N_Modulo, Descripcion, Icono, Orden, USUCRE) VALUES
+INSERT INTO modulo(n_modulo, descripcion, icono, orden, usu_cre) VALUES
  ('SEGURIDAD','Usuarios, roles y permisos','fa-lock',1,'ADMIN'),
  ('MANTENIMIENTO','Catalogos maestros','fa-cogs',2,'ADMIN'),
  ('COMPRAS','Registro de compras y proveedores','fa-truck',3,'ADMIN'),
@@ -1024,7 +1040,7 @@ INSERT INTO MODULO(N_Modulo, Descripcion, Icono, Orden, USUCRE) VALUES
  ('CAJA','Apertura, cierre y movimientos','fa-money-bill',7,'ADMIN'),
  ('REPORTES','Reportes gerenciales','fa-chart-bar',8,'ADMIN');
 
-INSERT INTO PERMISO(ID_Modulo, N_Permiso, Clave, USUCRE) VALUES
+INSERT INTO permiso(id_modulo, n_permiso, clave, usu_cre) VALUES
  (1,'Gestionar usuarios','SEG_USUARIO','ADMIN'),
  (1,'Gestionar roles','SEG_ROL','ADMIN'),
  (1,'Ver auditoria','SEG_AUDITORIA','ADMIN'),
@@ -1049,49 +1065,49 @@ INSERT INTO PERMISO(ID_Modulo, N_Permiso, Clave, USUCRE) VALUES
  (8,'Reporte de inventario','REP_INVENTARIO','ADMIN'),
  (8,'Reporte de caja','REP_CAJA','ADMIN');
 
-INSERT INTO ROL(N_Rol, Descripcion, Nivel, USUCRE) VALUES
+INSERT INTO rol(n_rol, descripcion, nivel, usu_cre) VALUES
  ('ADMINISTRADOR','Acceso total al sistema',1,'ADMIN'),
  ('CAJERO','Punto de venta y caja',2,'ADMIN'),
  ('ALMACENERO','Compras e inventario',2,'ADMIN');
 
-INSERT INTO ROL_PERMISO(ID_Rol, ID_Permiso, Concedido, USUCRE)
-SELECT 1, ID_Permiso, '1', 'ADMIN' FROM PERMISO;
+INSERT INTO rol_permiso(id_rol, id_permiso, concedido, usu_cre)
+SELECT 1, id_permiso, '1', 'ADMIN' FROM permiso;
 
-INSERT INTO ROL_PERMISO(ID_Rol, ID_Permiso, Concedido, USUCRE)
-SELECT 2, ID_Permiso, '1', 'ADMIN' FROM PERMISO
-WHERE Clave IN ('MAN_CLIENTE','INV_STOCK','VEN_REGISTRAR','CRE_REGISTRAR','CRE_COBRAR',
+INSERT INTO rol_permiso(id_rol, id_permiso, concedido, usu_cre)
+SELECT 2, id_permiso, '1', 'ADMIN' FROM permiso
+WHERE clave IN ('MAN_CLIENTE','INV_STOCK','VEN_REGISTRAR','CRE_REGISTRAR','CRE_COBRAR',
                 'CAJ_APERTURAR','CAJ_CERRAR','CAJ_MOVIMIENTO','REP_VENTAS','REP_CAJA');
 
-INSERT INTO ROL_PERMISO(ID_Rol, ID_Permiso, Concedido, USUCRE)
-SELECT 3, ID_Permiso, '1', 'ADMIN' FROM PERMISO
-WHERE Clave IN ('MAN_PRODUCTO','MAN_CATEGORIA','MAN_PROVEEDOR','COM_REGISTRAR',
+INSERT INTO rol_permiso(id_rol, id_permiso, concedido, usu_cre)
+SELECT 3, id_permiso, '1', 'ADMIN' FROM permiso
+WHERE clave IN ('MAN_PRODUCTO','MAN_CATEGORIA','MAN_PROVEEDOR','COM_REGISTRAR',
                 'INV_STOCK','INV_AJUSTE','INV_KARDEX','REP_INVENTARIO');
 
-INSERT INTO PERSONA(ID_Distrito, ID_TipoIdentidad, N_Documento, Nombre, Ap_Paterno, Ap_Materno, EMAIL, Celular, Genero, Direccion, USUCRE)
+INSERT INTO persona(id_distrito, id_tipo_identidad, n_documento, nombre, ap_paterno, ap_materno, email, celular, genero, direccion, usu_cre)
 VALUES (1,1,'21500001','MARTHA','QUISPE','ROJAS','martha@bodegatiamartha.pe','956123456','F','Av. Los Maestros 450 - Ica','ADMIN');
 
-INSERT INTO EMPLEADO(ID_Persona, ID_Contrato, ID_Cargo, Salario, Turno, USUCRE)
+INSERT INTO empleado(id_persona, id_contrato, id_cargo, salario, turno, usu_cre)
 VALUES (1,1,1,2500.00,'MANANA','ADMIN');
 
-INSERT INTO USUARIO(ID_TipoUsuario, ID_Empleado, Logeo, Clave, USUCRE)
-VALUES (1,1,'admin','$2a$10$DEMOHASHREEMPLAZARENPRODUCCION','ADMIN');
+INSERT INTO usuario(id_tipo_usuario, id_empleado, logeo, clave, usu_cre)
+VALUES (1,1,'admin','$2a$10$IogQrVFN9fGTB3rrPXiMSuGYQ/VkwUT596.B29fxaCs2eHdny2rM2','ADMIN');
 
-INSERT INTO USUARIO_ROL(ID_Usuario, ID_Rol, USUCRE) VALUES (1,1,'ADMIN');
+INSERT INTO usuario_rol(id_usuario, id_rol, usu_cre) VALUES (1,1,'ADMIN');
 
-INSERT INTO EMPRESA(RUC, Razon_Social, Direccion, Telefono, USUCRE)
+INSERT INTO empresa(ruc, razon_social, direccion, telefono, usu_cre)
 VALUES ('20601234567','BODEGA TIA MARTHA E.I.R.L.','Av. Los Maestros 450 - Ica','056234','ADMIN');
 
-INSERT INTO PERSONA(ID_Distrito, ID_TipoIdentidad, N_Documento, Nombre, Ap_Paterno, Ap_Materno, USUCRE)
+INSERT INTO persona(id_distrito, id_tipo_identidad, n_documento, nombre, ap_paterno, ap_materno, usu_cre)
 VALUES (1,1,'00000000','CLIENTE','VARIOS','','ADMIN');
 
-INSERT INTO CLIENTE(ID_Persona, Codigo_Cliente, Tipo_Cliente, Limite_Credito, USUCRE)
+INSERT INTO cliente(id_persona, codigo_cliente, tipo_cliente, limite_credito, usu_cre)
 VALUES (2,'CLI-0001','N',0,'ADMIN');
 
-INSERT INTO CAJA(N_Caja, Descripcion, Ubicacion, Serie_Terminal, Moneda, Monto_Base, USUCRE)
+INSERT INTO caja(n_caja, descripcion, ubicacion, serie_terminal, moneda, monto_base, usu_cre)
 VALUES ('CAJA 01','Caja del mostrador','Mostrador principal','T001','PEN',100.00,'ADMIN');
 
-INSERT INTO PRODUCTO(ID_CategoriaProducto, ID_Marca, Codigo_Barras, N_Producto, Detalle,
-                     P_Compra, P_Venta, P_Mayoreo, Stock_Actual, Stock_Minimo, Stock_Maximo, Afecto_IGV, Es_Perecible, USUCRE)
+INSERT INTO producto(id_categoria_producto, id_marca, codigo_barras, n_producto, detalle,
+                     p_compra, p_venta, p_mayoreo, stock_actual, stock_minimo, stock_maximo, afecto_igv, es_perecible, usu_cre)
 VALUES
  (1,2,'7750123000011','ARROZ COSTENO','Bolsa de 1 kg',3.20,4.20,4.00,80,20,300,'1','0','ADMIN'),
  (1,2,'7750123000028','ACEITE PRIMOR 1L','Botella 1 litro',7.50,9.50,9.00,40,10,120,'1','0','ADMIN'),
@@ -1102,7 +1118,7 @@ VALUES
  (7,3,'7750123000073','CERVEZA PILSEN 650ML','Botella retornable',4.50,6.00,5.70,72,24,240,'1','0','ADMIN'),
  (5,6,'7750123000080','PAPEL HIGIENICO ELITE x4','Paquete x4 rollos',4.20,5.50,5.20,35,10,120,'1','0','ADMIN');
 
-INSERT INTO PRESENTACION_PRODUCTO(ID_Producto, ID_UnidadMedida, Factor_Conversion, Es_Unidad_Base, USUCRE)
+INSERT INTO presentacion_producto(id_producto, id_unidad_medida, factor_conversion, es_unidad_base, usu_cre)
 VALUES
  (1,2,1,'1','ADMIN'),
  (2,1,1,'1','ADMIN'),
@@ -1113,34 +1129,34 @@ VALUES
  (7,9,1,'1','ADMIN'),
  (8,1,1,'1','ADMIN');
 
-INSERT INTO PRESENTACION_PRODUCTO(ID_Producto, ID_UnidadMedida, Factor_Conversion, Es_Unidad_Base, USUCRE)
+INSERT INTO presentacion_producto(id_producto, id_unidad_medida, factor_conversion, es_unidad_base, usu_cre)
 VALUES
  (3,7,6,'0','ADMIN'),
  (4,7,24,'0','ADMIN'),
  (7,7,12,'0','ADMIN'),
  (8,6,4,'0','ADMIN');
 
-INSERT INTO INVENTARIO(ID_Producto, ID_Almacen, Stock, Ubicacion_Fisica, USUCRE)
-SELECT ID_Producto, 1, Stock_Actual, 'ANAQUEL GENERAL', 'ADMIN' FROM PRODUCTO;
+INSERT INTO inventario(id_producto, id_almacen, stock, ubicacion_fisica, usu_cre)
+SELECT id_producto, 1, stock_actual, 'ANAQUEL GENERAL', 'ADMIN' FROM producto;
 
 /*==============================================================================
   14. TIPOS DE TABLA (TEMPORALES / COMPOSITE TYPES PARA FUNCIONES)
 ==============================================================================*/
-CREATE TYPE TT_DETALLE_VENTA AS (
-    ID_Producto      integer,
-    ID_PresentacionProducto integer,
-    Cantidad         numeric(12,3),
-    Precio_Unitario  numeric(10,2),
-    Descuento        numeric(10,2)
+CREATE TYPE tt_detalle_venta AS (
+    id_producto               bigint,
+    id_presentacion_producto  bigint,
+    cantidad                  numeric(12,3),
+    precio_unitario           numeric(10,2),
+    descuento                 numeric(10,2)
 );
 
-CREATE TYPE TT_DETALLE_COMPRA AS (
-    ID_Producto      integer,
-    ID_PresentacionProducto integer,
-    Cantidad         numeric(12,3),
-    Costo_Unitario   numeric(10,2),
-    N_Lote           varchar(30),
-    F_Vencimiento    date
+CREATE TYPE tt_detalle_compra AS (
+    id_producto               bigint,
+    id_presentacion_producto  bigint,
+    cantidad                  numeric(12,3),
+    costo_unitario            numeric(10,2),
+    n_lote                    varchar(30),
+    f_vencimiento             date
 );
 
 /*==============================================================================
@@ -1148,139 +1164,139 @@ CREATE TYPE TT_DETALLE_COMPRA AS (
 ==============================================================================*/
 
 -- 15.1 LOGIN + PERMISOS -------------------------------------------------------
-CREATE OR REPLACE FUNCTION USP_LOGIN(_Logeo varchar(30))
+CREATE OR REPLACE FUNCTION usp_login(_logeo varchar(30))
 RETURNS TABLE (
-    ID_Usuario integer, Logeo varchar(30), Clave varchar(200), ID_TipoUsuario integer, N_TipoUsuario varchar(50),
-    Nombre varchar(80), Ap_Paterno varchar(80), Ap_Materno varchar(80), ESTADO char(1)
+    id_usuario bigint, logeo varchar(30), clave varchar(200), id_tipo_usuario bigint, n_tipo_usuario varchar(50),
+    nombre varchar(80), ap_paterno varchar(80), ap_materno varchar(80), estado varchar(1)
 ) AS $$
 BEGIN
     RETURN QUERY
-    SELECT  U.ID_Usuario, U.Logeo, U.Clave, U.ID_TipoUsuario, TU.N_TipoUsuario,
-            P.Nombre, P.Ap_Paterno, P.Ap_Materno, U.ESTADO
-    FROM    USUARIO U
-            INNER JOIN TIPO_USUARIO TU ON TU.ID_TipoUsuario = U.ID_TipoUsuario
-            LEFT  JOIN EMPLEADO E      ON E.ID_Empleado     = U.ID_Empleado
-            LEFT  JOIN PERSONA  P      ON P.ID_Persona      = E.ID_Persona
-    WHERE   U.Logeo = _Logeo AND U.ESTADO = '1';
+    SELECT  u.id_usuario, u.logeo, u.clave, u.id_tipo_usuario, tu.n_tipo_usuario,
+            p.nombre, p.ap_paterno, p.ap_materno, u.estado
+    FROM    usuario u
+            INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario
+            LEFT  JOIN empleado  e     ON e.id_empleado      = u.id_empleado
+            LEFT  JOIN persona   p     ON p.id_persona       = e.id_persona
+    WHERE   u.logeo = _logeo AND u.estado = '1';
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION USP_PERMISOS_USUARIO(_ID_Usuario integer)
+CREATE OR REPLACE FUNCTION usp_permisos_usuario(_id_usuario bigint)
 RETURNS TABLE (
-    N_Modulo varchar(50), Icono varchar(50), Orden integer, Clave varchar(50), N_Permiso varchar(50)
+    n_modulo varchar(50), icono varchar(50), orden integer, clave varchar(50), n_permiso varchar(50)
 ) AS $$
 BEGIN
     RETURN QUERY
-    SELECT DISTINCT M.N_Modulo, M.Icono, M.Orden, PE.Clave, PE.N_Permiso
-    FROM   USUARIO_ROL UR
-           INNER JOIN ROL_PERMISO RP ON RP.ID_Rol     = UR.ID_Rol AND RP.Concedido = '1' AND RP.ESTADO = '1'
-           INNER JOIN PERMISO PE     ON PE.ID_Permiso = RP.ID_Permiso AND PE.ESTADO = '1'
-           INNER JOIN MODULO M       ON M.ID_Modulo   = PE.ID_Modulo  AND M.ESTADO  = '1'
-    WHERE  UR.ID_Usuario = _ID_Usuario AND UR.Vigente = '1' AND UR.ESTADO = '1'
-    ORDER  BY M.Orden, PE.N_Permiso;
+    SELECT DISTINCT m.n_modulo, m.icono, m.orden, pe.clave, pe.n_permiso
+    FROM   usuario_rol ur
+           INNER JOIN rol_permiso rp ON rp.id_rol     = ur.id_rol     AND rp.concedido = '1' AND rp.estado = '1'
+           INNER JOIN permiso     pe ON pe.id_permiso = rp.id_permiso AND pe.estado = '1'
+           INNER JOIN modulo      m  ON m.id_modulo   = pe.id_modulo  AND m.estado  = '1'
+    WHERE  ur.id_usuario = _id_usuario AND ur.vigente = '1' AND ur.estado = '1'
+    ORDER  BY m.orden, pe.n_permiso;
 END;
 $$ LANGUAGE plpgsql;
 
 -- 15.2 APERTURA Y CIERRE DE CAJA ---------------------------------------------
-CREATE OR REPLACE FUNCTION USP_APERTURAR_CAJA(
-    _ID_Caja        integer,
-    _ID_Usuario     integer,
-    _Monto_Inicial  numeric(12,2),
-    _Numero_Turno   varchar(20)  DEFAULT NULL,
-    _USUCRE         varchar(30)  DEFAULT 'SISTEMA',
-    _PCCRE          varchar(30)  DEFAULT NULL
-) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION usp_aperturar_caja(
+    _id_caja        bigint,
+    _id_usuario     bigint,
+    _monto_inicial  numeric(12,2),
+    _numero_turno   varchar(20)  DEFAULT NULL,
+    _usu_cre        varchar(30)  DEFAULT 'SISTEMA',
+    _pc_cre         varchar(30)  DEFAULT NULL
+) RETURNS bigint AS $$
 DECLARE
-    _ID_AperturaCaja integer;
+    _id_apertura_caja bigint;
 BEGIN
-    IF EXISTS(SELECT 1 FROM APERTURA_CAJA WHERE ID_Caja = _ID_Caja AND Situacion = 'A' AND ESTADO = '1') THEN
+    IF EXISTS(SELECT 1 FROM apertura_caja WHERE id_caja = _id_caja AND situacion = 'A' AND estado = '1') THEN
         RAISE EXCEPTION 'La caja ya se encuentra aperturada.' USING ERRCODE = '51001';
     END IF;
 
-    INSERT INTO APERTURA_CAJA(ID_Caja, ID_Usuario, Numero_Turno, F_Apertura, Monto_Inicial,
-                              Monto_Sistema, Situacion, USUCRE, PCCRE)
-    VALUES (_ID_Caja, _ID_Usuario, COALESCE(_Numero_Turno, TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDD')),
-            CURRENT_TIMESTAMP, _Monto_Inicial, _Monto_Inicial, 'A', _USUCRE, _PCCRE)
-    RETURNING ID_AperturaCaja INTO _ID_AperturaCaja;
+    INSERT INTO apertura_caja(id_caja, id_usuario, numero_turno, f_apertura, monto_inicial,
+                              monto_sistema, situacion, usu_cre, pc_cre)
+    VALUES (_id_caja, _id_usuario, COALESCE(_numero_turno, TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDD')),
+            CURRENT_TIMESTAMP, _monto_inicial, _monto_inicial, 'A', _usu_cre, _pc_cre)
+    RETURNING id_apertura_caja INTO _id_apertura_caja;
 
-    UPDATE CAJA SET Aperturada = '1', USUMOD = _USUCRE, FECMOD = CURRENT_TIMESTAMP WHERE ID_Caja = _ID_Caja;
+    UPDATE caja SET aperturada = '1', usu_mod = _usu_cre, fec_mod = CURRENT_TIMESTAMP WHERE id_caja = _id_caja;
 
-    INSERT INTO MOVIMIENTO_CAJA(ID_AperturaCaja, ID_TipoMovimiento, ID_Concepto, ID_MetodoPago,
-                                ID_Usuario, Descripcion, Monto, Afecta_Efectivo, USUCRE, PCCRE)
-    VALUES (_ID_AperturaCaja, 1, 3, 1, _ID_Usuario, 'Monto inicial de apertura', _Monto_Inicial, '1', _USUCRE, _PCCRE);
+    INSERT INTO movimiento_caja(id_apertura_caja, id_tipo_movimiento, id_concepto, id_metodo_pago,
+                                id_usuario, descripcion, monto, afecta_efectivo, usu_cre, pc_cre)
+    VALUES (_id_apertura_caja, 1, 3, 1, _id_usuario, 'Monto inicial de apertura', _monto_inicial, '1', _usu_cre, _pc_cre);
 
-    RETURN _ID_AperturaCaja;
+    RETURN _id_apertura_caja;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION USP_CERRAR_CAJA(
-    _ID_AperturaCaja  integer,
-    _ID_UsuarioCierre integer,
-    _Monto_Declarado  numeric(12,2),
-    _Observacion      varchar(200) DEFAULT NULL,
-    _USUMOD           varchar(30)  DEFAULT 'SISTEMA'
+CREATE OR REPLACE FUNCTION usp_cerrar_caja(
+    _id_apertura_caja  bigint,
+    _id_usuario_cierre bigint,
+    _monto_declarado   numeric(12,2),
+    _observacion       varchar(200) DEFAULT NULL,
+    _usu_mod           varchar(30)  DEFAULT 'SISTEMA'
 ) RETURNS TABLE (
-    Monto_Inicial numeric(12,2), Total_Ingresos numeric(12,2), Total_Egresos numeric(12,2),
-    Monto_Sistema numeric(12,2), Monto_Declarado numeric(12,2), Diferencia numeric(12,2)
+    monto_inicial numeric(12,2), total_ingresos numeric(12,2), total_egresos numeric(12,2),
+    monto_sistema numeric(12,2), monto_declarado numeric(12,2), diferencia numeric(12,2)
 ) AS $$
 DECLARE
-    _Ing numeric(12,2);
-    _Egr numeric(12,2);
-    _Ini numeric(12,2);
-    _Sis numeric(12,2);
-    _ID_Caja integer;
+    _ing numeric(12,2);
+    _egr numeric(12,2);
+    _ini numeric(12,2);
+    _sis numeric(12,2);
+    _id_caja bigint;
 BEGIN
-    SELECT AC.Monto_Inicial, AC.ID_Caja INTO _Ini, _ID_Caja
-    FROM   APERTURA_CAJA AC WHERE AC.ID_AperturaCaja = _ID_AperturaCaja AND AC.Situacion = 'A';
+    SELECT ac.monto_inicial, ac.id_caja INTO _ini, _id_caja
+    FROM   apertura_caja ac WHERE ac.id_apertura_caja = _id_apertura_caja AND ac.situacion = 'A';
 
-    IF _ID_Caja IS NULL THEN
+    IF _id_caja IS NULL THEN
         RAISE EXCEPTION 'No existe una apertura de caja activa con ese identificador.' USING ERRCODE = '51002';
     END IF;
 
-    SELECT COALESCE(SUM(CASE WHEN T.Signo = '+' AND MC.ID_Concepto <> 3 THEN MC.Monto ELSE 0 END), 0),
-           COALESCE(SUM(CASE WHEN T.Signo = '-' THEN MC.Monto ELSE 0 END), 0)
-    INTO _Ing, _Egr
-    FROM   MOVIMIENTO_CAJA MC
-           INNER JOIN TIPO_MOVIMIENTO_CAJA T ON T.ID_TipoMovimiento = MC.ID_TipoMovimiento
-    WHERE  MC.ID_AperturaCaja = _ID_AperturaCaja AND MC.ESTADO = '1' AND MC.Afecta_Efectivo = '1';
+    SELECT COALESCE(SUM(CASE WHEN t.signo = '+' AND mc.id_concepto <> 3 THEN mc.monto ELSE 0 END), 0),
+           COALESCE(SUM(CASE WHEN t.signo = '-' THEN mc.monto ELSE 0 END), 0)
+    INTO _ing, _egr
+    FROM   movimiento_caja mc
+           INNER JOIN tipo_movimiento_caja t ON t.id_tipo_movimiento = mc.id_tipo_movimiento
+    WHERE  mc.id_apertura_caja = _id_apertura_caja AND mc.estado = '1' AND mc.afecta_efectivo = '1';
 
-    _Sis := _Ini + _Ing - _Egr;
+    _sis := _ini + _ing - _egr;
 
-    UPDATE APERTURA_CAJA
-    SET    ID_UsuarioCierre = _ID_UsuarioCierre,
-           F_Cierre         = CURRENT_TIMESTAMP,
-           Total_Ingresos   = _Ing,
-           Total_Egresos    = _Egr,
-           Monto_Sistema    = _Sis,
-           Monto_Declarado  = _Monto_Declarado,
-           Diferencia       = _Monto_Declarado - _Sis,
-           Situacion        = 'C',
-           Observacion      = _Observacion,
-           USUMOD           = _USUMOD,
-           FECMOD           = CURRENT_TIMESTAMP
-    WHERE  ID_AperturaCaja  = _ID_AperturaCaja;
+    UPDATE apertura_caja
+    SET    id_usuario_cierre = _id_usuario_cierre,
+           f_cierre         = CURRENT_TIMESTAMP,
+           total_ingresos   = _ing,
+           total_egresos    = _egr,
+           monto_sistema    = _sis,
+           monto_declarado  = _monto_declarado,
+           diferencia       = _monto_declarado - _sis,
+           situacion        = 'C',
+           observacion      = _observacion,
+           usu_mod          = _usu_mod,
+           fec_mod          = CURRENT_TIMESTAMP
+    WHERE  id_apertura_caja  = _id_apertura_caja;
 
-    UPDATE CAJA SET Aperturada = '0', USUMOD = _USUMOD, FECMOD = CURRENT_TIMESTAMP WHERE ID_Caja = _ID_Caja;
+    UPDATE caja SET aperturada = '0', usu_mod = _usu_mod, fec_mod = CURRENT_TIMESTAMP WHERE id_caja = _id_caja;
 
-    RETURN QUERY SELECT _Ini, _Ing, _Egr, _Sis, _Monto_Declarado, _Monto_Declarado - _Sis;
+    RETURN QUERY SELECT _ini, _ing, _egr, _sis, _monto_declarado, _monto_declarado - _sis;
 END;
 $$ LANGUAGE plpgsql;
 
 -- 15.3 REGISTRAR COMPRA -------------------------------------------------------
-CREATE OR REPLACE FUNCTION USP_REGISTRAR_COMPRA(
-    _ID_Proveedor    integer,
-    _ID_Usuario      integer,
-    _ID_Almacen      integer,
-    _ID_MetodoPago   integer,
-    _TipoDocumento   char(11),
-    _Documento       varchar(50),
-    _Es_Credito      char(1) DEFAULT '0',
-    _F_Vencimiento   date    DEFAULT NULL,
-    _ID_AperturaCaja integer DEFAULT NULL,
-    _Detalle         TEXT    DEFAULT '[]', -- JSON string or custom approach; alternatively loop over temp table
-    _USUCRE          varchar(30) DEFAULT 'SISTEMA',
-    _PCCRE           varchar(30) DEFAULT NULL
-) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION usp_registrar_compra(
+    _id_proveedor    bigint,
+    _id_usuario      bigint,
+    _id_almacen      bigint,
+    _id_metodo_pago  bigint,
+    _tipo_documento  varchar(11),
+    _documento       varchar(50),
+    _es_credito      varchar(1) DEFAULT '0',
+    _f_vencimiento   date    DEFAULT NULL,
+    _id_apertura_caja bigint DEFAULT NULL,
+    _detalle         TEXT    DEFAULT '[]', -- JSON string or custom approach; alternatively loop over temp table
+    _usu_cre         varchar(30) DEFAULT 'SISTEMA',
+    _pc_cre          varchar(30) DEFAULT NULL
+) RETURNS bigint AS $$
 BEGIN
     RETURN 0;
 END;
@@ -1290,26 +1306,26 @@ $$ LANGUAGE plpgsql;
 -- Implementación adaptada orientada a funciones modulares en PL/pgSQL
 
 -- 15.8 BUSQUEDA RAPIDA PARA EL PUNTO DE VENTA ---------------------------------
-CREATE OR REPLACE FUNCTION USP_BUSCAR_PRODUCTO(_Texto varchar(50))
+CREATE OR REPLACE FUNCTION usp_buscar_producto(_texto varchar(50))
 RETURNS TABLE (
-    ID_Producto integer, Codigo_Barras varchar(30), N_Producto varchar(50),
-    N_Marca varchar(50), Unidad varchar(10), N_CategoriaProducto varchar(50),
-    P_Venta numeric(10,2), P_Mayoreo numeric(10,2), Stock_Actual numeric(12,3), Stock_Minimo numeric(12,3)
+    id_producto bigint, codigo_barras varchar(30), n_producto varchar(50),
+    n_marca varchar(50), unidad varchar(10), n_categoria_producto varchar(50),
+    p_venta numeric(10,2), p_mayoreo numeric(10,2), stock_actual numeric(12,3), stock_minimo numeric(12,3)
 ) AS $$
 BEGIN
     RETURN QUERY
-    SELECT P.ID_Producto, P.Codigo_Barras, P.N_Producto, M.N_Marca, U.Abreviatura AS Unidad,
-           C.N_CategoriaProducto, P.P_Venta, P.P_Mayoreo, P.Stock_Actual, P.Stock_Minimo
-    FROM   PRODUCTO P
-           INNER JOIN CATEGORIA_PRODUCTO C ON C.ID_CategoriaProducto = P.ID_CategoriaProducto
-            INNER JOIN PRESENTACION_PRODUCTO PP ON PP.ID_Producto = P.ID_Producto
-                                AND PP.Es_Unidad_Base = '1'
-                                AND PP.ESTADO = '1'
-            INNER JOIN UNIDAD_MEDIDA U      ON U.ID_UnidadMedida = PP.ID_UnidadMedida
-           LEFT  JOIN MARCA M              ON M.ID_Marca             = P.ID_Marca
-    WHERE  P.ESTADO = '1'
-      AND (P.Codigo_Barras = _Texto OR P.N_Producto ILIKE '%' || _Texto || '%')
-    ORDER BY P.N_Producto
+    SELECT p.id_producto, p.codigo_barras, p.n_producto, m.n_marca, u.abreviatura AS unidad,
+           c.n_categoria_producto, p.p_venta, p.p_mayoreo, p.stock_actual, p.stock_minimo
+    FROM   producto p
+           INNER JOIN categoria_producto c ON c.id_categoria_producto = p.id_categoria_producto
+           INNER JOIN presentacion_producto pp ON pp.id_producto = p.id_producto
+                                        AND pp.es_unidad_base = '1'
+                                        AND pp.estado = '1'
+           INNER JOIN unidad_medida u       ON u.id_unidad_medida  = pp.id_unidad_medida
+           LEFT  JOIN marca m               ON m.id_marca          = p.id_marca
+    WHERE  p.estado = '1'
+      AND (p.codigo_barras = _texto OR p.n_producto ILIKE '%' || _texto || '%')
+    ORDER BY p.n_producto
     LIMIT 30;
 END;
 $$ LANGUAGE plpgsql;
@@ -1317,119 +1333,119 @@ $$ LANGUAGE plpgsql;
 /*==============================================================================
   16. VISTAS DE EXPLOTACION / REPORTES
 ==============================================================================*/
-CREATE OR REPLACE VIEW VW_STOCK_CRITICO AS
-SELECT P.ID_Producto, P.Codigo_Barras, P.N_Producto, C.N_CategoriaProducto, M.N_Marca,
-       P.Stock_Actual, P.Stock_Minimo, P.Stock_Maximo,
-       (P.Stock_Maximo - P.Stock_Actual) AS Cantidad_Sugerida, P.P_Compra
-FROM   PRODUCTO P
-       INNER JOIN CATEGORIA_PRODUCTO C ON C.ID_CategoriaProducto = P.ID_CategoriaProducto
-       LEFT  JOIN MARCA M              ON M.ID_Marca             = P.ID_Marca
-WHERE  P.ESTADO = '1' AND P.Stock_Actual <= P.Stock_Minimo;
+CREATE OR REPLACE VIEW vw_stock_critico AS
+SELECT p.id_producto, p.codigo_barras, p.n_producto, c.n_categoria_producto, m.n_marca,
+       p.stock_actual, p.stock_minimo, p.stock_maximo,
+       (p.stock_maximo - p.stock_actual) AS cantidad_sugerida, p.p_compra
+FROM   producto p
+       INNER JOIN categoria_producto c ON c.id_categoria_producto = p.id_categoria_producto
+       LEFT  JOIN marca m              ON m.id_marca              = p.id_marca
+WHERE  p.estado = '1' AND p.stock_actual <= p.stock_minimo;
 
-CREATE OR REPLACE VIEW VW_PRODUCTOS_POR_VENCER AS
-SELECT L.ID_Lote, P.N_Producto, L.N_Lote, L.F_Vencimiento, L.Cantidad_Actual,
-       (L.F_Vencimiento - CURRENT_DATE) AS Dias_Restantes, A.N_Almacen
-FROM   LOTE_PRODUCTO L
-       INNER JOIN PRODUCTO P ON P.ID_Producto = L.ID_Producto
-       INNER JOIN ALMACEN  A ON A.ID_Almacen  = L.ID_Almacen
-WHERE  L.ESTADO = '1' AND L.Cantidad_Actual > 0 AND L.F_Vencimiento IS NOT NULL;
+CREATE OR REPLACE VIEW vw_productos_por_vencer AS
+SELECT l.id_lote, p.n_producto, l.n_lote, l.f_vencimiento, l.cantidad_actual,
+       (l.f_vencimiento - CURRENT_DATE) AS dias_restantes, a.n_almacen
+FROM   lote_producto l
+       INNER JOIN producto p ON p.id_producto = l.id_producto
+       INNER JOIN almacen  a ON a.id_almacen  = l.id_almacen
+WHERE  l.estado = '1' AND l.cantidad_actual > 0 AND l.f_vencimiento IS NOT NULL;
 
-CREATE OR REPLACE VIEW VW_VENTAS_DETALLE AS
-SELECT V.ID_Venta, V.F_Venta, V.TipoDocumento, V.Situacion,
-       COALESCE(E.Razon_Social, TRIM(COALESCE(PC.Ap_Paterno,'') || ' ' || COALESCE(PC.Ap_Materno,'') || ', ' || PC.Nombre)) AS Cliente,
-       U.Logeo AS Usuario, MP.N_MetodoPago,
-       P.N_Producto, D.Cantidad, D.Precio_Unitario, D.Descuento, D.Sub_Total, V.Total
-FROM   VENTA V
-       INNER JOIN DETALLE_VENTA D ON D.ID_Venta      = V.ID_Venta
-       INNER JOIN PRODUCTO P      ON P.ID_Producto   = D.ID_Producto
-       INNER JOIN CLIENTE  CL     ON CL.ID_Cliente   = V.ID_Cliente
-       LEFT  JOIN PERSONA  PC     ON PC.ID_Persona   = CL.ID_Persona
-       LEFT  JOIN EMPRESA  E      ON E.ID_Empresa    = CL.ID_Empresa
-       INNER JOIN USUARIO  U      ON U.ID_Usuario    = V.ID_Usuario
-       INNER JOIN METODO_PAGO MP  ON MP.ID_MetodoPago = V.ID_MetodoPago;
+CREATE OR REPLACE VIEW vw_ventas_detalle AS
+SELECT v.id_venta, v.f_venta, v.tipo_documento, v.situacion,
+       COALESCE(e.razon_social, TRIM(COALESCE(pc.ap_paterno,'') || ' ' || COALESCE(pc.ap_materno,'') || ', ' || pc.nombre)) AS cliente,
+       u.logeo AS usuario, mp.n_metodo_pago,
+       p.n_producto, d.cantidad, d.precio_unitario, d.descuento, d.sub_total, v.total
+FROM   venta v
+       INNER JOIN detalle_venta d ON d.id_venta      = v.id_venta
+       INNER JOIN producto p      ON p.id_producto   = d.id_producto
+       INNER JOIN cliente  cl     ON cl.id_cliente   = v.id_cliente
+       LEFT  JOIN persona  pc     ON pc.id_persona   = cl.id_persona
+       LEFT  JOIN empresa  e      ON e.id_empresa    = cl.id_empresa
+       INNER JOIN usuario  u      ON u.id_usuario    = v.id_usuario
+       INNER JOIN metodo_pago mp  ON mp.id_metodo_pago = v.id_metodo_pago;
 
-CREATE OR REPLACE VIEW VW_VENTAS_DIARIAS AS
-SELECT CAST(V.F_Venta AS date) AS Fecha,
-       COUNT(DISTINCT V.ID_Venta) AS Nro_Ventas,
-       SUM(V.SubTotal) AS SubTotal, SUM(V.IGV) AS IGV, SUM(V.Total) AS Total,
-       SUM(CASE WHEN V.Es_Credito = '1' THEN V.Total ELSE 0 END) AS Total_Credito
-FROM   VENTA V
-WHERE  V.Situacion = 'R' AND V.ESTADO = '1'
-GROUP BY CAST(V.F_Venta AS date);
+CREATE OR REPLACE VIEW vw_ventas_diarias AS
+SELECT CAST(v.f_venta AS date) AS fecha,
+       COUNT(DISTINCT v.id_venta) AS nro_ventas,
+       SUM(v.sub_total) AS sub_total, SUM(v.igv) AS igv, SUM(v.total) AS total,
+       SUM(CASE WHEN v.es_credito = '1' THEN v.total ELSE 0 END) AS total_credito
+FROM   venta v
+WHERE  v.situacion = 'R' AND v.estado = '1'
+GROUP BY CAST(v.f_venta AS date);
 
-CREATE OR REPLACE VIEW VW_KARDEX AS
-SELECT MI.ID_MovimientoInv, MI.F_Movimiento, P.N_Producto, A.N_Almacen,
-       T.N_TipoMovimiento, T.Signo, MI.Cantidad, MI.Costo_Unitario,
-       MI.Stock_Anterior, MI.Stock_Nuevo, MI.Documento, MI.Observacion, U.Logeo AS Usuario
-FROM   MOVIMIENTO_INVENTARIO MI
-       INNER JOIN PRODUCTO P            ON P.ID_Producto = MI.ID_Producto
-       INNER JOIN ALMACEN  A            ON A.ID_Almacen  = MI.ID_Almacen
-       INNER JOIN TIPO_MOVIMIENTO_INV T ON T.ID_TipoMovimientoInv = MI.ID_TipoMovimientoInv
-       INNER JOIN USUARIO  U            ON U.ID_Usuario  = MI.ID_Usuario;
+CREATE OR REPLACE VIEW vw_kardex AS
+SELECT mi.id_movimiento_inv, mi.f_movimiento, p.n_producto, a.n_almacen,
+       t.n_tipo_movimiento, t.signo, mi.cantidad, mi.costo_unitario,
+       mi.stock_anterior, mi.stock_nuevo, mi.documento, mi.observacion, u.logeo AS usuario
+FROM   movimiento_inventario mi
+       INNER JOIN producto p            ON p.id_producto = mi.id_producto
+       INNER JOIN almacen  a            ON a.id_almacen  = mi.id_almacen
+       INNER JOIN tipo_movimiento_inv t ON t.id_tipo_movimiento_inv = mi.id_tipo_movimiento_inv
+       INNER JOIN usuario  u            ON u.id_usuario  = mi.id_usuario;
 
-CREATE OR REPLACE VIEW VW_CUENTAS_POR_COBRAR AS
-SELECT CC.ID_Cuenta, CC.ID_Venta, CC.F_Emision, CC.F_Vencimiento, CC.Monto_Total, CC.Saldo, CC.Situacion,
-       TRIM(COALESCE(PC.Ap_Paterno,'') || ' ' || COALESCE(PC.Ap_Materno,'') || ', ' || COALESCE(PC.Nombre,'')) AS Cliente,
-       PC.Celular, (CURRENT_DATE - CC.F_Vencimiento) AS Dias_Vencidos
-FROM   CUENTA_COBRAR CC
-       INNER JOIN CLIENTE CL ON CL.ID_Cliente = CC.ID_Cliente
-       LEFT  JOIN PERSONA PC ON PC.ID_Persona = CL.ID_Persona
-WHERE  CC.ESTADO = '1';
+CREATE OR REPLACE VIEW vw_cuentas_por_cobrar AS
+SELECT cc.id_cuenta, cc.id_venta, cc.f_emision, cc.f_vencimiento, cc.monto_total, cc.saldo, cc.situacion,
+       TRIM(COALESCE(pc.ap_paterno,'') || ' ' || COALESCE(pc.ap_materno,'') || ', ' || COALESCE(pc.nombre,'')) AS cliente,
+       pc.celular, (CURRENT_DATE - cc.f_vencimiento) AS dias_vencidos
+FROM   cuenta_cobrar cc
+       INNER JOIN cliente cl ON cl.id_cliente = cc.id_cliente
+       LEFT  JOIN persona pc ON pc.id_persona = cl.id_persona
+WHERE  cc.estado = '1';
 
-CREATE OR REPLACE VIEW VW_ARQUEO_CAJA AS
-SELECT AC.ID_AperturaCaja, C.N_Caja, AC.F_Apertura, AC.F_Cierre, AC.Situacion,
-       UA.Logeo AS Usuario_Apertura, UC.Logeo AS Usuario_Cierre,
-       AC.Monto_Inicial, AC.Total_Ingresos, AC.Total_Egresos,
-       AC.Monto_Sistema, AC.Monto_Declarado, AC.Diferencia
-FROM   APERTURA_CAJA AC
-       INNER JOIN CAJA C    ON C.ID_Caja    = AC.ID_Caja
-       INNER JOIN USUARIO UA ON UA.ID_Usuario = AC.ID_Usuario
-       LEFT  JOIN USUARIO UC ON UC.ID_Usuario = AC.ID_UsuarioCierre;
+CREATE OR REPLACE VIEW vw_arqueo_caja AS
+SELECT ac.id_apertura_caja, c.n_caja, ac.f_apertura, ac.f_cierre, ac.situacion,
+       ua.logeo AS usuario_apertura, uc.logeo AS usuario_cierre,
+       ac.monto_inicial, ac.total_ingresos, ac.total_egresos,
+       ac.monto_sistema, ac.monto_declarado, ac.diferencia
+FROM   apertura_caja ac
+       INNER JOIN caja c    ON c.id_caja       = ac.id_caja
+       INNER JOIN usuario ua ON ua.id_usuario  = ac.id_usuario
+       LEFT  JOIN usuario uc ON uc.id_usuario  = ac.id_usuario_cierre;
 
-CREATE OR REPLACE VIEW VW_PRODUCTOS_MAS_VENDIDOS AS
-SELECT P.ID_Producto, P.N_Producto, C.N_CategoriaProducto,
-       SUM(D.Cantidad) AS Cantidad_Vendida, SUM(D.Sub_Total) AS Monto_Vendidas
-FROM   DETALLE_VENTA D
-       INNER JOIN VENTA V              ON V.ID_Venta = D.ID_Venta AND V.Situacion = 'R'
-       INNER JOIN PRODUCTO P           ON P.ID_Producto = D.ID_Producto
-       INNER JOIN CATEGORIA_PRODUCTO C ON C.ID_CategoriaProducto = P.ID_CategoriaProducto
-GROUP BY P.ID_Producto, P.N_Producto, C.N_CategoriaProducto
-ORDER BY SUM(D.Cantidad) DESC
+CREATE OR REPLACE VIEW vw_productos_mas_vendidos AS
+SELECT p.id_producto, p.n_producto, c.n_categoria_producto,
+       SUM(d.cantidad) AS cantidad_vendida, SUM(d.sub_total) AS monto_vendidas
+FROM   detalle_venta d
+       INNER JOIN venta v              ON v.id_venta = d.id_venta AND v.situacion = 'R'
+       INNER JOIN producto p           ON p.id_producto = d.id_producto
+       INNER JOIN categoria_producto c ON c.id_categoria_producto = p.id_categoria_producto
+GROUP BY p.id_producto, p.n_producto, c.n_categoria_producto
+ORDER BY SUM(d.cantidad) DESC
 LIMIT 100;
 
 /*==============================================================================
   17. TRIGGERS DE AUDITORIA (PL/pgSQL)
 ==============================================================================*/
-CREATE OR REPLACE FUNCTION FN_TRG_PRODUCTO_AUDITORIA()
+CREATE OR REPLACE FUNCTION fn_trg_producto_auditoria()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'INSERT') THEN
-        INSERT INTO AUDITORIA(N_Tabla, Accion, ID_Registro, Valor_Nuevo, F_Evento, Terminal)
-        VALUES ('PRODUCTO', 'INSERT', NEW.ID_Producto, CONCAT('Stock=', NEW.Stock_Actual, '; PVenta=', NEW.P_Venta), CURRENT_TIMESTAMP,inet_client_addr()::text);
+        INSERT INTO auditoria(n_tabla, accion, id_registro, valor_nuevo, f_evento, terminal)
+        VALUES ('producto', 'INSERT', NEW.id_producto, CONCAT('Stock=', NEW.stock_actual, '; PVenta=', NEW.p_venta), CURRENT_TIMESTAMP, inet_client_addr()::text);
         RETURN NEW;
     ELSIF (TG_OP = 'UPDATE') THEN
-        INSERT INTO AUDITORIA(N_Tabla, Accion, ID_Registro, Valor_Anterior, Valor_Nuevo, F_Evento, Terminal)
-        VALUES ('PRODUCTO', 'UPDATE', NEW.ID_Producto, CONCAT('Stock=', OLD.Stock_Actual, '; PVenta=', OLD.P_Venta), CONCAT('Stock=', NEW.Stock_Actual, '; PVenta=', NEW.P_Venta), CURRENT_TIMESTAMP, inet_client_addr()::text);
+        INSERT INTO auditoria(n_tabla, accion, id_registro, valor_anterior, valor_nuevo, f_evento, terminal)
+        VALUES ('producto', 'UPDATE', NEW.id_producto, CONCAT('Stock=', OLD.stock_actual, '; PVenta=', OLD.p_venta), CONCAT('Stock=', NEW.stock_actual, '; PVenta=', NEW.p_venta), CURRENT_TIMESTAMP, inet_client_addr()::text);
         RETURN NEW;
     ELSIF (TG_OP = 'DELETE') THEN
-        INSERT INTO AUDITORIA(N_Tabla, Accion, ID_Registro, Valor_Anterior, F_Evento, Terminal)
-        VALUES ('PRODUCTO', 'DELETE', OLD.ID_Producto, CONCAT('Stock=', OLD.Stock_Actual, '; PVenta=', OLD.P_Venta), CURRENT_TIMESTAMP, inet_client_addr()::text);
+        INSERT INTO auditoria(n_tabla, accion, id_registro, valor_anterior, f_evento, terminal)
+        VALUES ('producto', 'DELETE', OLD.id_producto, CONCAT('Stock=', OLD.stock_actual, '; PVenta=', OLD.p_venta), CURRENT_TIMESTAMP, inet_client_addr()::text);
         RETURN OLD;
     END IF;
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER TR_PRODUCTO_AUDITORIA
-AFTER INSERT OR UPDATE OR DELETE ON PRODUCTO
-FOR EACH ROW EXECUTE FUNCTION FN_TRG_PRODUCTO_AUDITORIA();
+CREATE TRIGGER tr_producto_auditoria
+AFTER INSERT OR UPDATE OR DELETE ON producto
+FOR EACH ROW EXECUTE FUNCTION fn_trg_producto_auditoria();
 
 
 /*==============================================================================
   18. PRUEBA FUNCIONAL BASICA
 ==============================================================================*/
-SELECT USP_APERTURAR_CAJA(_ID_Caja := 1, _ID_Usuario := 1, _Monto_Inicial := 100.00, _USUCRE := 'admin');
+SELECT usp_aperturar_caja(_id_caja := 1, _id_usuario := 1, _monto_inicial := 100.00, _usu_cre := 'admin');
 
-SELECT * FROM USP_BUSCAR_PRODUCTO('ARROZ');
+SELECT * FROM usp_buscar_producto('ARROZ');
 
 SELECT '=== MIGRACION A POSTGRESQL COMPLETADA EXITOSAMENTE ===';
