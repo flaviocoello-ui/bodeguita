@@ -11,13 +11,13 @@ function setTema(nombre) {
   localStorage.setItem("mm-theme", nombre);
 
   document.querySelectorAll("[data-theme-option]").forEach(function (b) {
-    var activo = b.getAttribute("data-theme-option") === nombre;
+    let activo = b.getAttribute("data-theme-option") === nombre;
     b.classList.toggle("border-primary", activo);
   });
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  var tema = localStorage.getItem("mm-theme") || "claro";
+  let tema = localStorage.getItem("mm-theme") || "claro";
 
   setTema(tema);
 });
