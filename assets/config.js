@@ -1,5 +1,5 @@
 const URL_DESARROLLO = "http://127.0.0.1:8080";
-const URL_PRODUCCION = "https://api.bodeguita.com";
+const URL_PRODUCCION = "https://bodeguita-backend.onrender.com";
 
 function esEntornoDesarrollo() {
   const host = window.location.hostname;
