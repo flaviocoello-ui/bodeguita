@@ -262,7 +262,7 @@
       <main class="flex-grow-1 min-width-0 p-3 p-md-4">
         <!-- Barra superior para móvil -->
         <header
-          class="d-md-none d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 border-bottom mb-3"
+          class="d-md-none d-flex flex-wrap justify-content-between align-items-center gap-2 p-2 border-bottom mb-3"
         >
           <button
             class="btn btn-dark"
@@ -272,8 +272,10 @@
             <i class="bi bi-list"></i>
             Menú
           </button>
-          <span class="fw-semibold">Mini Market</span>
-          <i class="bi bi-person-circle fs-4 text-secondary"></i>
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-semibold">Mini Market</span>
+            <i class="bi bi-person-circle fs-4 text-secondary"></i>
+          </div>
         </header>
 
         <div class="d-flex align-items-center mb-4">
@@ -1599,9 +1601,6 @@
                   >
                   <select class="form-select" id="usuario-tipo" required>
                     <option value="" disabled selected>Seleccione</option>
-                    <option value="1">ADMINISTRADOR</option>
-                    <option value="2">CAJERO</option>
-                    <option value="3">ALMACENERO</option>
                   </select>
                 </div>
                 <div class="col-md-6">
@@ -1634,46 +1633,11 @@
                   >
                   <select class="form-select" id="usuario-empleado">
                     <option value="" selected>Sin empleado asociado</option>
-                    <option value="1">Martha Quispe Rojas</option>
-                    <option value="2">Juan Pérez Torres</option>
-                    <option value="3">Carlos Ruiz Díaz</option>
                   </select>
                 </div>
                 <div class="col-md-12">
                   <label class="form-label d-block">Roles</label>
-                  <div class="form-check form-switch">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      role="switch"
-                      id="rol-admin"
-                    />
-                    <label class="form-check-label" for="rol-admin"
-                      >ADMINISTRADOR</label
-                    >
-                  </div>
-                  <div class="form-check form-switch">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      role="switch"
-                      id="rol-cajero"
-                    />
-                    <label class="form-check-label" for="rol-cajero"
-                      >CAJERO</label
-                    >
-                  </div>
-                  <div class="form-check form-switch">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      role="switch"
-                      id="rol-almacen"
-                    />
-                    <label class="form-check-label" for="rol-almacen"
-                      >ALMACENERO</label
-                    >
-                  </div>
+                  <div id="usuario-roles"></div>
                 </div>
               </div>
             </form>
@@ -1835,5 +1799,8 @@
     </div>
 
     <script src="../assets/theme.js"></script>
+    <script type="module" src="./usuarios.js"></script>
+    <script type="module" src="./roles.js"></script>
+    <script type="module" src="./permisos.js"></script>
   </body>
 </html>
