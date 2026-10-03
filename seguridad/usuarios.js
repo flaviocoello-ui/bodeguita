@@ -76,7 +76,13 @@ function badge(texto, clase) {
 }
 
 function filaUsuario(u, indice) {
+  const idUsuario = leer(u, ["idUsuario", "id"]);
   const tr = document.createElement("tr");
+  const estado = leer(u, ["estado"]);
+  const activo = estado !== "0" && estado !== false;
+  if (!activo) {
+    tr.classList.add("text-muted", "opacity-75");
+  }
   tr.appendChild(celda(leer(u, ["idUsuario", "id"]) ?? indice + 1));
   tr.appendChild(celda(aTexto(leer(u, ["logeo"]))));
 
@@ -97,8 +103,6 @@ function filaUsuario(u, indice) {
   tr.appendChild(tdRoles);
 
   const tdEstado = document.createElement("td");
-  const estado = leer(u, ["estado"]);
-  const activo = estado !== "0" && estado !== false;
   tdEstado.appendChild(
     badge(
       activo ? "Activo" : "Inactivo",
@@ -115,11 +119,14 @@ function filaUsuario(u, indice) {
   const tdAcciones = document.createElement("td");
   tdAcciones.innerHTML =
     '<div class="d-flex gap-1">' +
-    '<button class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></button>' +
     (activo
-      ? '<button class="btn btn-sm btn-outline-primary" title="Desactivar"><i class="bi bi-toggle-on"></i></button>'
-      : '<button class="btn btn-sm btn-outline-secondary" title="Activar"><i class="bi bi-toggle-off opacity-50"></i></button>') +
+      ? '<button class="btn btn-sm btn-outline-primary" title="Editar" data-accion="editar"><i class="bi bi-pencil"></i></button>' +
+        '<button class="btn btn-sm btn-outline-primary" title="Desactivar" data-accion="desactivar"><i class="bi bi-toggle-on"></i></button>'
+      : '<button class="btn btn-sm btn-outline-secondary" title="Desactivado" disabled><i class="bi bi-toggle-off opacity-50"></i></button>') +
     "</div>";
+  tdAcciones.querySelectorAll("button").forEach((b) => {
+    b.dataset.id = idUsuario;
+  });
   tr.appendChild(tdAcciones);
   return tr;
 }
@@ -134,15 +141,24 @@ function filaMensaje(texto) {
 }
 
 let usuarios = [];
+let editando = null;
+// El backend deja de listar los desactivados; se conservan hasta recargar la página.
+const desactivados = [];
 
 async function listarUsuarios() {
   try {
     usuarios = (await api("GET", "/api/usuarios")) || [];
-    if (!usuarios.length) {
+    const idDe = (x) => leer(x, ["idUsuario", "id"]);
+    const vigentes = new Set(usuarios.map(idDe));
+    const visibles = [
+      ...usuarios,
+      ...desactivados.filter((d) => !vigentes.has(idDe(d))),
+    ].sort((a, b) => idDe(a) - idDe(b));
+    if (!visibles.length) {
       tbody.replaceChildren(filaMensaje("No hay usuarios registrados."));
       return;
     }
-    tbody.replaceChildren(...usuarios.map(filaUsuario));
+    tbody.replaceChildren(...visibles.map(filaUsuario));
   } catch (err) {
     if (!irALogin(err)) {
       tbody.replaceChildren(filaMensaje(err.mensaje || "No se pudo cargar."));
@@ -188,10 +204,11 @@ function llenarRoles(roles) {
   );
 }
 
-// Solo se ofrecen empleados que todavía no tienen usuario.
+// Solo se ofrecen empleados que todavía no tienen usuario (salvo el del usuario editado).
 function idsEmpleadosConUsuario() {
   return new Set(
     usuarios
+      .filter((u) => u !== editando)
       .map((u) => leer(u, ["idEmpleado"]) ?? leer(u.empleado, ["idEmpleado"]))
       .filter((id) => id !== undefined),
   );
@@ -250,7 +267,9 @@ function validar(payload, clave2) {
   if (!selectTipo.value) {
     errores.push("El tipo de usuario es obligatorio.");
   }
-  if (payload.clave.length < 8 || payload.clave.length > 100) {
+  if (editando && !payload.clave) {
+    // Se mantiene la contraseña actual.
+  } else if (payload.clave.length < 8 || payload.clave.length > 100) {
     errores.push("La contraseña debe tener entre 8 y 100 caracteres.");
   } else if (payload.clave !== clave2) {
     errores.push("Las contraseñas no coinciden.");
@@ -273,7 +292,18 @@ async function guardarUsuario() {
     if (!tieneCsrf()) {
       await yo();
     }
-    await api("POST", "/api/usuarios", payload);
+    if (editando) {
+      if (!payload.clave) {
+        delete payload.clave;
+      }
+      await api(
+        "PUT",
+        "/api/usuarios/" + leer(editando, ["idUsuario", "id"]),
+        payload,
+      );
+    } else {
+      await api("POST", "/api/usuarios", payload);
+    }
     form.reset();
     bootstrap.Modal.getInstance(modal).hide();
     await listarUsuarios();
@@ -286,10 +316,99 @@ async function guardarUsuario() {
   }
 }
 
-modal.addEventListener("show.bs.modal", () => {
+const titulo = document.getElementById("modalNuevoUsuarioLabel");
+const inputClave = document.getElementById("usuario-clave");
+const inputClave2 = document.getElementById("usuario-clave2");
+
+function prepararModo() {
+  const edicion = editando !== null;
+  titulo.textContent = edicion ? "Editar Usuario" : "Nuevo Usuario";
+  inputClave.required = !edicion;
+  inputClave2.required = !edicion;
+  inputClave.placeholder = edicion
+    ? "Dejar vacío para mantener la actual"
+    : "Crear contraseña";
+}
+
+function cargarDatosEdicion() {
+  document.getElementById("usuario-logeo").value =
+    leer(editando, ["logeo"]) || "";
+  selectTipo.value = leer(editando, ["idTipoUsuario"]) ?? "";
+  selectEmpleado.value = leer(editando, ["idEmpleado"]) ?? "";
+  const ids = new Set(
+    (leer(editando, ["roles"]) || []).map((r) =>
+      Number(leer(r, ["idRol", "id"])),
+    ),
+  );
+  contenedorRoles.querySelectorAll("input").forEach((input) => {
+    input.checked = ids.has(Number(input.value));
+  });
+}
+
+modal.addEventListener("show.bs.modal", async () => {
   limpiarError();
-  cargarCatalogos();
+  prepararModo();
+  const ok = await cargarCatalogos();
+  if (ok && editando) {
+    // El empleado actual puede no estar en la lista filtrada.
+    const idEmp = leer(editando, ["idEmpleado"]);
+    if (
+      idEmp != null &&
+      !selectEmpleado.querySelector(`option[value="${idEmp}"]`)
+    ) {
+      const op = document.createElement("option");
+      op.value = idEmp;
+      op.textContent =
+        leer(editando, ["nombreEmpleado"]) || "Empleado " + idEmp;
+      selectEmpleado.appendChild(op);
+    }
+    cargarDatosEdicion();
+  }
 });
+
+modal.addEventListener("hidden.bs.modal", () => {
+  editando = null;
+  form.reset();
+});
+
 btnGuardar.addEventListener("click", guardarUsuario);
+
+async function desactivarUsuario(u) {
+  const nombre = leer(u, ["logeo"]);
+  if (!window.confirm(`¿Desactivar al usuario "${nombre}"?`)) {
+    return;
+  }
+  try {
+    if (!tieneCsrf()) {
+      await yo();
+    }
+    await api("DELETE", "/api/usuarios/" + leer(u, ["idUsuario", "id"]));
+    desactivados.push({ ...u, estado: false });
+    await listarUsuarios();
+  } catch (err) {
+    if (!irALogin(err)) {
+      window.alert(err.mensaje || "No se pudo desactivar el usuario.");
+    }
+  }
+}
+
+tbody.addEventListener("click", (e) => {
+  const boton = e.target.closest("button[data-accion]");
+  if (!boton) {
+    return;
+  }
+  const u = usuarios.find(
+    (x) => String(leer(x, ["idUsuario", "id"])) === boton.dataset.id,
+  );
+  if (!u) {
+    return;
+  }
+  if (boton.dataset.accion === "editar") {
+    editando = u;
+    bootstrap.Modal.getOrCreateInstance(modal).show();
+  } else {
+    desactivarUsuario(u);
+  }
+});
 
 listarUsuarios();
